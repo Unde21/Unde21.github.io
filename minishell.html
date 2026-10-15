@@ -1,0 +1,274 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Minishell · Un shell dans le navigateur</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Big+Shoulders+Display:wght@700;800&family=Martian+Mono:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="site.css">
+<link rel="stylesheet" href="game.css">
+<link rel="stylesheet" href="games/vendor/xterm/xterm.css">
+<style>
+  .examples { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+  .chip {
+    font: 500 0.72rem/1.2 var(--mono);
+    padding: 0.55em 0.75em;
+    border-radius: 999px;
+    border: 1px solid var(--line);
+    background: transparent;
+    color: var(--ink);
+    cursor: pointer;
+    text-align: left;
+    max-width: 100%;
+    overflow-wrap: anywhere;
+  }
+  .chip:hover { border-color: var(--accent); }
+  .chip b { font-weight: 600; color: var(--accent); }
+  .chip:disabled { opacity: 0.5; cursor: default; }
+
+  .term-wrap { display: grid; gap: 0.6rem; }
+  .term {
+    position: relative;
+    height: clamp(22rem, 62vh, 40rem);
+    background: var(--stage);
+    border-radius: var(--radius);
+    box-shadow: 0 0 0 1px var(--line);
+    padding: 0.7rem 0.4rem 0.7rem 0.8rem;
+    overflow: hidden;
+  }
+  .term .xterm { height: 100%; }
+  .term .xterm-viewport { background: transparent !important; }
+  .term .xterm-viewport::-webkit-scrollbar { width: 8px; }
+  .term .xterm-viewport::-webkit-scrollbar-thumb { background: color-mix(in srgb, var(--stage-ink) 25%, transparent); border-radius: 4px; }
+  .term:focus-within { box-shadow: 0 0 0 1px var(--accent); }
+  .keysbar { display: flex; flex-wrap: wrap; gap: 0.4rem; align-items: center; }
+  .keysbar .label { margin-right: 0.2rem; }
+  .key {
+    font: 500 0.72rem/1 var(--mono);
+    padding: 0.55em 0.7em;
+    border-radius: 6px;
+    border: 1px solid var(--line);
+    border-bottom-width: 2px;
+    background: var(--panel);
+    color: var(--ink);
+    cursor: pointer;
+  }
+  .key:hover { border-color: var(--accent); }
+  .keysbar .spacer { flex: 1; }
+  .about ul { margin: 0; padding-left: 1.1rem; color: var(--muted); display: grid; gap: 0.3rem; }
+  .about li code, .about p code { font-size: 0.85em; }
+</style>
+</head>
+<body>
+<header class="bar">
+  <div class="wrap">
+    <a class="back" href="index.html">← Projets</a>
+    <h1>Minishell</h1>
+    <span class="label">C · fork · execve · pipes · signaux</span>
+    <span class="spacer"></span>
+    <a class="btn" href="https://github.com/Unde21/Minishell" target="_blank" rel="noopener">Code sur GitHub</a>
+  </div>
+</header>
+
+<main class="wrap play">
+  <div class="examples" id="examples" aria-label="Exemples de commandes">
+    <button class="chip" type="button" data-cmd="cat notes.txt | sort | uniq -c | sort -rn">Pipes <b>cat notes.txt | sort | uniq -c | sort -rn</b></button>
+    <button class="chip" type="button" data-cmd="echo &quot;Salut $USER, dernier code : $?&quot; '$HOME reste tel quel'">Variables et quotes <b>echo "Salut $USER" '$HOME'</b></button>
+    <button class="chip" type="button" data-cmd="cat &lt;&lt; FIN | wc -l&#13;ligne une, $USER&#13;ligne deux&#13;FIN">Heredoc <b>cat &lt;&lt; FIN | wc -l</b></button>
+    <button class="chip" type="button" data-cmd="ls -l > liste.txt&#13;cat -e &lt; liste.txt">Redirections <b>ls -l &gt; liste.txt</b></button>
+    <button class="chip" type="button" data-cmd="cd minishell_src/srcs/builtins&#13;ls *.c&#13;grep -c ft_ *.c&#13;cd">Wildcards <b>ls *.c</b></button>
+    <button class="chip" type="button" data-cmd="grep -rn readline minishell_src | wc -l">Le vrai code <b>grep -rn readline minishell_src</b></button>
+    <button class="chip" type="button" data-cmd="./minishell&#13;export DANS=imbriqué&#13;echo $DANS&#13;exit 42&#13;echo $? $DANS">Shell imbriqué <b>./minishell … exit 42</b></button>
+    <button class="chip" type="button" data-cmd="unset PATH&#13;ls&#13;/bin/ls&#13;export PATH=/bin">Sans PATH <b>unset PATH</b></button>
+  </div>
+
+  <div class="term-wrap">
+    <div class="term" id="term" aria-label="Terminal minishell">
+      <div class="overlay" id="overlay" data-state="loading">
+        <h2 id="ov-title">Chargement</h2>
+        <p id="ov-text">Téléchargement de minishell.wasm…</p>
+        <button class="btn primary" id="ov-btn" type="button" hidden>Relancer</button>
+      </div>
+    </div>
+    <div class="keysbar" aria-label="Touches spéciales">
+      <span class="label">Touches</span>
+      <button class="key" type="button" data-key="&#3;" title="SIGINT">Ctrl-C</button>
+      <button class="key" type="button" data-key="&#28;" title="SIGQUIT">Ctrl-\</button>
+      <button class="key" type="button" data-key="&#4;" title="Fin de fichier">Ctrl-D</button>
+      <button class="key" type="button" data-key="&#27;[A" title="Historique">↑</button>
+      <button class="key" type="button" data-key="&#27;[B" title="Historique">↓</button>
+      <span class="spacer"></span>
+      <button class="btn" id="restart" type="button">Redémarrer</button>
+    </div>
+  </div>
+
+  <div class="about">
+    <section>
+      <h3>Le projet</h3>
+      <p>Un shell inspiré de bash, écrit en C avec erbuffet : lexer, parser, expansion des variables et des quotes, puis exécution avec <code>fork()</code>, <code>execve()</code>, <code>pipe()</code> et <code>dup2()</code>. Le prompt affiche ✅ ou ❌ selon le code de retour de la dernière commande.</p>
+    </section>
+    <section>
+      <h3>À essayer</h3>
+      <ul>
+        <li>pipes <code>|</code>, redirections <code>&lt; &gt; &gt;&gt;</code> et heredoc <code>&lt;&lt;</code></li>
+        <li><code>$VAR</code>, <code>$?</code>, quotes simples et doubles, wildcards <code>*</code></li>
+        <li>builtins : <code>echo -n</code>, <code>cd</code>, <code>pwd</code>, <code>export</code>, <code>unset</code>, <code>env</code>, <code>exit</code></li>
+        <li><kbd>Ctrl-C</kbd> pendant <code>sleep 10</code> ou <code>cat</code>, <kbd>Ctrl-\</kbd>, <kbd>Ctrl-D</kbd> pour quitter</li>
+        <li><code>help</code> liste les commandes de <code>/bin</code></li>
+      </ul>
+    </section>
+    <section>
+      <h3>Sous le capot</h3>
+      <p>Le code C de minishell est compilé en WebAssembly, sans modification. Un petit noyau en JavaScript lui fournit les appels système : chaque processus a sa propre instance et sa mémoire, et <code>fork()</code> copie cette mémoire dans l’enfant comme un vrai fork. Les commandes de <code>/bin</code> (<code>ls</code>, <code>grep</code>, <code>sort</code>…) sont réécrites en JavaScript ; les fichiers vivent en mémoire et disparaissent au rechargement.</p>
+    </section>
+  </div>
+</main>
+
+<script src="games/vendor/xterm/xterm.js"></script>
+<script src="games/vendor/xterm/addon-fit.js"></script>
+<script src="games/vendor/xterm/addon-unicode11.js"></script>
+<script src="games/mlxweb/posix.js"></script>
+<script src="games/mlxweb/commands.js"></script>
+<script>
+(function () {
+  'use strict';
+  const $ = (id) => document.getElementById(id);
+  const HOME = '/home/samaouch';
+  const README = [
+    'Bienvenue dans minishell, compilé en WebAssembly.',
+    '',
+    'Tout ce que tu tapes est lu par le vrai programme C (readline), puis',
+    'analysé et exécuté par lui : fork, execve, pipe, dup2, waitpid.',
+    '',
+    'Dans ce dossier :',
+    '  minishell       le shell lui-même (./minishell lance un shell imbriqué)',
+    '  minishell_src/  son code source, à explorer avec ls, cat, grep, wc',
+    '  notes.txt       quelques lignes pour tester sort, uniq, grep',
+    '',
+    'Pas de && ni de ; : ils ne font pas partie du sujet.',
+    'Tape help pour la liste des commandes.',
+    '',
+  ].join('\n');
+  const NOTES = 'pomme\nbanane\ncerise\npomme\nkiwi\nbanane\npomme\n';
+
+  let module = null, sources = null, sys = null;
+
+  const css = getComputedStyle(document.documentElement);
+  const v = (name) => css.getPropertyValue(name).trim();
+  const term = new Terminal({
+    convertEol: true,
+    cursorBlink: true,
+    fontFamily: '"Martian Mono", ui-monospace, Menlo, monospace',
+    fontSize: window.innerWidth < 600 ? 12 : 13.5,
+    lineHeight: 1.25,
+    scrollback: 3000,
+    allowTransparency: true,
+    allowProposedApi: true, // unicode 11 widths: ✅ and ❌ take two cells
+    theme: {
+      background: 'rgba(0,0,0,0)',
+      foreground: v('--stage-ink') || '#dfe7e4',
+      cursor: v('--accent') || '#43c9bb',
+      cursorAccent: v('--stage') || '#050807',
+      selectionBackground: 'rgba(67,201,187,0.35)',
+    },
+  });
+  const fit = new FitAddon.FitAddon();
+  term.loadAddon(fit);
+  term.loadAddon(new Unicode11Addon.Unicode11Addon());
+  term.unicode.activeVersion = '11';
+
+  function show(state, title, text, button) {
+    const ov = $('overlay');
+    ov.hidden = !state;
+    if (!state) return;
+    ov.dataset.state = state;
+    $('ov-title').textContent = title;
+    $('ov-text').textContent = text;
+    $('ov-btn').hidden = !button;
+  }
+
+  function makeFs() {
+    const fs = new Posix.FS();
+    for (const d of ['/bin', '/usr/bin', '/usr/local/bin', '/tmp', '/etc', HOME]) fs.mkdirp(d);
+    for (const name of Object.keys(PosixCommands)) {
+      for (const d of ['/bin', '/usr/bin']) fs.writeFile(d + '/' + name, '#!' + name + '\n', 0o755).exec = name;
+    }
+    fs.writeFile('/etc/hostname', 'portfolio\n');
+    fs.writeFile(HOME + '/minishell', '\0asm', 0o755).exec = 'wasm:minishell';
+    fs.writeFile(HOME + '/LISEZMOI.txt', README);
+    fs.writeFile(HOME + '/notes.txt', NOTES);
+    for (const [path, text] of Object.entries(sources || {})) {
+      const full = HOME + '/minishell_src/' + path;
+      fs.mkdirp(full.slice(0, full.lastIndexOf('/')));
+      fs.writeFile(full, text);
+    }
+    return fs;
+  }
+
+  async function boot() {
+    if (sys) sys.killAll();
+    term.reset();
+    show(null);
+    const env = ['PATH=/usr/local/bin:/usr/bin:/bin', 'HOME=' + HOME, 'USER=samaouch', 'LOGNAME=samaouch',
+      'PWD=' + HOME, 'OLDPWD=' + HOME, 'SHLVL=1', 'TERM=xterm-256color', 'LANG=fr_FR.UTF-8'];
+    const mine = Posix.create({
+      fs: makeFs(), term, commands: PosixCommands, programs: { minishell: module },
+      onSessionEnd(status) {
+        if (sys !== mine) return;
+        const code = (status >> 8) & 0xff, sig = status & 0x7f;
+        show('ended', 'Session terminée', sig ? 'minishell a reçu le signal ' + sig + '.' : 'minishell est sorti avec le code ' + code + '.', true);
+      },
+    });
+    sys = mine;
+    term.write('\x1b[2mminishell · WebAssembly · cat LISEZMOI.txt pour commencer\x1b[0m\r\n\r\n');
+    await sys.spawnRoot('minishell', ['minishell'], env, HOME);
+    term.focus();
+  }
+
+  term.onData((d) => { if (sys) sys.input(d); });
+
+  // Example buttons type their lines into the terminal (each line ends with Enter).
+  function atPrompt() {
+    const r = sys && sys.tty.reader;
+    return r && r.mode === 'readline' && !r.done;
+  }
+  function typeCmd(text) {
+    if (!sys) return;
+    const lines = text.split('\r').map((l) => l + '\r').join('');
+    if (atPrompt()) sys.input('\x05\x15' + lines);
+    else { sys.input('\x03'); setTimeout(() => sys.input(lines), 120); }
+    term.focus();
+  }
+  document.querySelectorAll('#examples .chip').forEach((b) => b.addEventListener('click', () => typeCmd(b.dataset.cmd)));
+  document.querySelectorAll('.keysbar .key').forEach((b) => b.addEventListener('click', () => { if (sys) sys.input(b.dataset.key); term.focus(); }));
+  $('restart').addEventListener('click', boot);
+  $('ov-btn').addEventListener('click', boot);
+
+  new ResizeObserver(() => { try { fit.fit(); } catch (e) { /* hidden */ } }).observe($('term'));
+
+  (async () => {
+    try {
+      await document.fonts.load('13px "Martian Mono"').catch(() => {});
+      term.open($('term'));
+      fit.fit();
+      const [m, src] = await Promise.all([
+        WebAssembly.compileStreaming(fetch('games/minishell/minishell.wasm')).catch(async () => {
+          const r = await fetch('games/minishell/minishell.wasm');
+          return WebAssembly.compile(await r.arrayBuffer());
+        }),
+        fetch('games/minishell/src.json').then((r) => r.json()).catch(() => ({})),
+      ]);
+      module = m; sources = src;
+      await boot();
+    } catch (e) {
+      console.error(e);
+      show('error', 'Impossible de lancer', String(e.message || e), false);
+    }
+  })();
+  window.minishell = { get sys() { return sys; }, term };
+})();
+</script>
+</body>
+</html>

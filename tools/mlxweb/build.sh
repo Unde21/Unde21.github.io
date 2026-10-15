@@ -31,7 +31,15 @@ elif [[ "${FIBERS:-0}" == 1 ]]; then
 fi
 ASYNC=(--pass-arg=asyncify-imports@mlxweb.yield,mlxweb.fiber_switch)
 [[ "${FIBERS:-0}" == 1 ]] || ASYNC+=(--pass-arg=asyncify-ignore-indirect)
-COMMON=(--target=$TARGET --sysroot="$SYSROOT" -O2 -I"$HERE/include"
+INC=(-I"$HERE/include")
+if [[ "${POSIX:-0}" == 1 ]]; then
+  # Command-line programs run by posix.js: one instance per process.
+  EXTRA_SRC=("$HERE/mlx_posix.c")
+  INC=(-I"$HERE/include-posix" -I"$HERE/include")
+  LDFLAGS+=(-Wl,--export=__stack_pointer -Wl,--export-table)
+  ASYNC=(--pass-arg=asyncify-imports@posix.fork,posix.waitpid,posix.readline,wasi_snapshot_preview1.fd_read,wasi_snapshot_preview1.fd_write,wasi_snapshot_preview1.poll_oneoff)
+fi
+COMMON=(--target=$TARGET --sysroot="$SYSROOT" -O2 "${INC[@]}"
   -D_WASI_EMULATED_SIGNAL -D_WASI_EMULATED_PROCESS_CLOCKS -D_WASI_EMULATED_GETPID
   -Wno-implicit-function-declaration -Wno-int-conversion -Wno-incompatible-pointer-types
   -Wno-unused-command-line-argument -Wno-deprecated-non-prototype)

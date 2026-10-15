@@ -30,4 +30,12 @@ cd ~/work/Philosophers/philo_bonus
 FIBERS=1 $M/build.sh $S/philosophers/philo_bonus.wasm -Dexit=mlxweb_exit -DFIBER_STACK=65536 -DFIBER_ABUF=16384 -Iincludes -- \
   $(ls srcs_bonus/*.c | grep -v init_child_bonus.c) $M/ports/philosophers/init_child_web.c
 
+cd ~/work/Minishell
+# POSIX=1: one wasm instance per process, run by games/mlxweb/posix.js (fork copies memory).
+# main(ac, av, envp) and chdir() are wrapped by mlx_posix.c; the sources are unchanged.
+PATH=$M/bin:$PATH make -s -C libft CC=cc
+POSIX=1 $M/build.sh $S/minishell/minishell.wasm -Dmain=mlxweb_user_main -DMLXWEB_MAIN_ENVP -Dchdir=mlxweb_chdir \
+  -Iincludes -Ilibft -- $(sed -n '/^SRCS/,/^$/p' Makefile | grep -oE 'srcs/[^ \\]+\.c') libft/libft.a
+python3 $M/ports/minishell/pack_src.py . $S/minishell/src.json
+
 cp $M/runtime.js $M/runtime-worker.js $S/mlxweb/
