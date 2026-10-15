@@ -27,4 +27,8 @@ lu par la même fonction `mlx_xpm_file_to_image`.
 Seul fichier remplacé dans les projets : `Cub3D/srcs_bonus/game/sound/init.c`
 (`fork` + `cvlc` → audio du navigateur), voir `tools/mlxweb/ports/cub3d/`.
 
+Réglage propre à la version web : la sensibilité de la souris de Cub3D bonus démarre à 70 %
+de la barre du menu pause (`sensitivity = 110` au lieu de 175), appliqué au moment du build
+par `tools/mlxweb/ports/build_all.sh`.
+
 Rebuild : `tools/mlxweb/ports/build_all.sh` (wasi-sdk 25 + `npm i binaryen`).
