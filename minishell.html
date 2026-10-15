@@ -39,6 +39,7 @@
     overflow: hidden;
   }
   .term .xterm { height: 100%; }
+  .term .overlay { z-index: 5; }
   .term .xterm-viewport { background: transparent !important; }
   .term .xterm-viewport::-webkit-scrollbar { width: 8px; }
   .term .xterm-viewport::-webkit-scrollbar-thumb { background: color-mix(in srgb, var(--stage-ink) 25%, transparent); border-radius: 4px; }
@@ -218,7 +219,7 @@
       onSessionEnd(status) {
         if (sys !== mine) return;
         const code = (status >> 8) & 0xff, sig = status & 0x7f;
-        show('ended', 'Session ended', sig ? 'minishell was killed by signal ' + sig + '.' : 'minishell exited with status ' + code + '.', true);
+        show('ended', 'Session ended', (sig ? 'minishell was killed by signal ' + sig + '.' : 'minishell exited with status ' + code + '.') + ' Press Enter or Restart.', true);
       },
     });
     sys = mine;
@@ -227,7 +228,11 @@
     term.focus();
   }
 
-  term.onData((d) => { if (sys) sys.input(d); });
+  term.onData((d) => {
+    // after exit, Enter starts a new session
+    if (!$('overlay').hidden && $('overlay').dataset.state === 'ended') { if (d === '\r') boot(); return; }
+    if (sys) sys.input(d);
+  });
 
   // Example buttons type their lines into the terminal (each line ends with Enter).
   function atPrompt() {
