@@ -383,6 +383,8 @@
       for (const k of pressed) queue.push([3, k, 0, 0]);
       pressed.clear();
     }
+    // X11 button numbers: 1 left, 2 middle, 3 right, 4/5 wheel, 8/9 side buttons.
+    function xButton(b) { return [1, 2, 3, 8, 9][b] || 1; }
     function onMouseDown(e) {
       if (!running) return;
       canvas.focus && canvas.focus();
@@ -390,12 +392,13 @@
         try { const p = canvas.requestPointerLock(); if (p && p.catch) p.catch(() => {}); } catch (_) { /* ignore */ }
       }
       const [x, y] = canvasXY(e);
-      queue.push([4, e.button === 0 ? 1 : e.button === 1 ? 2 : 3, x, y]);
+      queue.push([4, xButton(e.button), x, y]);
     }
     function onMouseUp(e) {
       if (!running) return;
+      if (e.button === 3 || e.button === 4) e.preventDefault(); // no browser back/forward
       const [x, y] = canvasXY(e);
-      queue.push([5, e.button === 0 ? 1 : e.button === 1 ? 2 : 3, x, y]);
+      queue.push([5, xButton(e.button), x, y]);
     }
     function onMouseMove(e) {
       if (!running) return;

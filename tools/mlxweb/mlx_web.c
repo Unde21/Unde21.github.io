@@ -42,6 +42,14 @@ typedef struct s_hookslot
 	void	*param;
 }	t_hookslot;
 
+/* Last place each image was put this frame (see replay_puts). */
+typedef struct s_put
+{
+	void		*img;
+	int			x;
+	int			y;
+}	t_put;
+
 typedef struct s_win
 {
 	int			w;
@@ -49,6 +57,9 @@ typedef struct s_win
 	uint32_t	*fb;
 	uint8_t		*rgba;
 	t_hookslot	hooks[36];
+	struct s_put	*puts;
+	int			nputs;
+	int			capputs;
 	int			mx;
 	int			my;
 }	t_win;
@@ -60,6 +71,8 @@ typedef struct s_mlx
 	void	*loop_param;
 	int		running;
 }	t_mlx;
+
+static t_win	*g_windows[8];
 
 /* Loop-hook pacing, tunable from JS (see runtime.js `loopRate`). */
 static double	g_iter_per_sec = 0;		/* 0 = as many as fit in budget */
@@ -117,6 +130,12 @@ void	*mlx_new_window(void *mlx_ptr, int w, int h, char *title)
 	win->mx = w / 2;
 	win->my = h / 2;
 	m->win = win;
+	for (int k = 0; k < 8; k++)
+		if (!g_windows[k])
+		{
+			g_windows[k] = win;
+			break ;
+		}
 	js_window(w, h, title ? title : "");
 	return (win);
 }
@@ -177,20 +196,87 @@ char	*mlx_get_data_addr(void *img_ptr, int *bpp, int *size_line, int *endian)
 	return ((char *)img->px);
 }
 
+static void	blit(t_win *win, t_img *img, int x, int y);
+
+static void	record_put(t_win *win, void *img, int x, int y)
+{
+	int		i;
+	t_put	*grown;
+
+	for (i = 0; i < win->nputs; i++)
+		if (win->puts[i].img == img)
+			break ;
+	if (i < win->nputs)
+	{
+		memmove(win->puts + i, win->puts + i + 1,
+			(win->nputs - i - 1) * sizeof(t_put));
+		win->nputs--;
+	}
+	if (win->nputs == win->capputs)
+	{
+		grown = realloc(win->puts, sizeof(t_put) * (win->capputs * 2 + 16));
+		if (!grown)
+			return ;
+		win->puts = grown;
+		win->capputs = win->capputs * 2 + 16;
+	}
+	win->puts[win->nputs++] = (t_put){img, x, y};
+}
+
+/*
+** X11's MiniLibX uses shared memory: the server reads an image's pixels
+** a moment after mlx_put_image_to_window(), so pixels a program draws into
+** an image right after putting it still reach the screen (Cub3D's menus do
+** this). Each image's last put is replayed, in order, before presenting.
+*/
+static void	replay_puts(t_win *win)
+{
+	int	i;
+
+	for (i = 0; i < win->nputs; i++)
+		blit(win, win->puts[i].img, win->puts[i].x, win->puts[i].y);
+	win->nputs = 0;
+}
+
+static void	forget_image(void *img)
+{
+	int		w;
+	int		i;
+	t_win	*win;
+
+	for (w = 0; w < 8; w++)
+	{
+		win = g_windows[w];
+		if (!win)
+			continue ;
+		for (i = 0; i < win->nputs; i++)
+			if (win->puts[i].img == img)
+			{
+				memmove(win->puts + i, win->puts + i + 1,
+					(win->nputs - i - 1) * sizeof(t_put));
+				win->nputs--;
+				i--;
+			}
+	}
+}
+
 int	mlx_put_image_to_window(void *mlx_ptr, void *win_ptr, void *img_ptr,
 		int x, int y)
 {
-	t_win		*win;
-	t_img		*img;
+	(void)mlx_ptr;
+	if (!win_ptr || !img_ptr)
+		return (0);
+	blit(win_ptr, img_ptr, x, y);
+	record_put(win_ptr, img_ptr, x, y);
+	return (0);
+}
+
+static void	blit(t_win *win, t_img *img, int x, int y)
+{
 	int			sx0, sy0, sx1, sy1, i, j;
 	uint32_t	*src, *dst;
 	uint8_t		*msk;
 
-	(void)mlx_ptr;
-	win = win_ptr;
-	img = img_ptr;
-	if (!win || !img)
-		return (0);
 	sx0 = x < 0 ? -x : 0;
 	sy0 = y < 0 ? -y : 0;
 	sx1 = img->w;
@@ -200,7 +286,7 @@ int	mlx_put_image_to_window(void *mlx_ptr, void *win_ptr, void *img_ptr,
 	if (y + sy1 > win->h)
 		sy1 = win->h - y;
 	if (sx0 >= sx1 || sy0 >= sy1)
-		return (0);
+		return ;
 	j = sy0;
 	while (j < sy1)
 	{
@@ -221,7 +307,7 @@ int	mlx_put_image_to_window(void *mlx_ptr, void *win_ptr, void *img_ptr,
 		}
 		j++;
 	}
-	return (0);
+	return ;
 }
 
 int	mlx_get_color_value(void *mlx_ptr, int color)
@@ -285,6 +371,8 @@ static void	dispatch(t_win *win, int *ev)
 		{
 			win->mx += ev[1];
 			win->my += ev[2];
+			win->mx = win->mx < 0 ? 0 : win->mx >= win->w ? win->w - 1 : win->mx;
+			win->my = win->my < 0 ? 0 : win->my >= win->h ? win->h - 1 : win->my;
 		}
 		else
 		{
@@ -314,6 +402,7 @@ static void	present(t_win *win)
 	uint32_t	c;
 	uint8_t		*o;
 
+	replay_puts(win);
 	n = (size_t)win->w * win->h;
 	o = win->rgba;
 	i = 0;
@@ -418,6 +507,10 @@ int	mlx_destroy_window(void *mlx_ptr, void *win_ptr)
 		return (0);
 	if (m && m->win == win)
 		m->win = NULL;
+	for (int k = 0; k < 8; k++)
+		if (g_windows[k] == win)
+			g_windows[k] = NULL;
+	free(win->puts);
 	free(win->fb);
 	free(win->rgba);
 	free(win);
@@ -433,6 +526,7 @@ int	mlx_destroy_image(void *mlx_ptr, void *img_ptr)
 	if (!img)
 		return (0);
 	free(img->px);
+	forget_image(img);
 	free(img->mask);
 	free(img);
 	return (0);

@@ -152,6 +152,19 @@
       });
     }
     showStart();
+    localizeKeys();
+  }
+
+  // Keys follow their physical position (WASD on QWERTY = ZQSD on AZERTY):
+  // show each key with the label of the visitor's own layout when known.
+  function localizeKeys() {
+    if (!navigator.keyboard || !navigator.keyboard.getLayoutMap) return;
+    navigator.keyboard.getLayoutMap().then((map) => {
+      document.querySelectorAll('kbd[data-code]').forEach((k) => {
+        const label = map.get(k.dataset.code);
+        if (label) k.textContent = label.toUpperCase();
+      });
+    }).catch(() => {});
   }
 
   window.Player = { mount };
