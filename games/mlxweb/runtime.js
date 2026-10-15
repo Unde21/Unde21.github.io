@@ -406,7 +406,8 @@
         if (document.pointerLockElement !== canvas) return;
         const r = canvas.getBoundingClientRect();
         const sx = canvas.width / r.width;
-        queue.push([6, Math.round(e.movementX * sx), Math.round(e.movementY * sx), 1]);
+        const k = sx * (opts.mouseSpeed || 1);
+        queue.push([6, Math.round(e.movementX * k), Math.round(e.movementY * k), 1]);
       } else {
         const [x, y] = canvasXY(e);
         queue.push([6, x, y, 0]);

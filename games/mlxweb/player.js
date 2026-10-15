@@ -109,6 +109,7 @@
           loopRate: v.loopRate,
           budgetMs: v.budgetMs || 10,
           mouse: v.mouse || 'absolute',
+          mouseSpeed: v.mouseSpeed || 1,
           threads: isolated ? v.threads || 0 : 0,
           workerUrl: cfg.workerUrl || 'games/mlxweb/runtime-worker.js',
           soundBase: v.soundBase || '',
