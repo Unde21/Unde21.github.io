@@ -1,0 +1,116 @@
+*
+
+body
+{
+	background: linear-gradient(rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.7)), url('background.gif');
+	background-size: cover;
+	background-position: center;
+	background-attachment: fixed;
+	color: #00ff41;
+	font-family: 'Courier New', Courier, monospace;
+	margin: 0;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	height: 100vh;
+}
+
+.title
+{
+	font-size: 3rem;
+	margin-bottom: 100px;
+	text-align: center;
+	text-transform: uppercase;
+	letter-spacing: 5px;
+	text-shadow: 0 0 15px #00ff41;
+	margin-top: -100px
+}
+
+.term
+{
+	background: #1a1a1a;
+	border: 1px solid #333;
+	border-radius: 5px;
+	width: 600px;
+	box-shadow: 0 0 20px rgba(0,255,65,0.2);
+}
+
+.term-bar
+{
+	background: #333;
+	padding: 10px;
+	display: flex;
+	gap: 8px;
+	border-radius: 5px 5px 0 0;
+}
+
+.dot
+{
+	height: 12px;
+	width: 12px;
+	border-radius: 50%;
+}
+
+.red
+{
+	background: #ff5f56;
+}
+
+.yellow
+{
+	background: #ffbd2e;
+}
+
+.green
+{
+	background: #27c93f;
+}
+
+.content
+{
+	padding: 25px;
+	line-height: 1.6;
+}
+
+nav
+{
+	margin-top: 20px;
+	display: flex;
+	flex-wrap: wrap;
+	gap: 10px;
+}
+
+a
+{
+	color: #00ff41;
+	text-decoration: none;
+	border: 1px solid #00ff41;
+	padding: 8px 15px;
+	font-size: 0.9rem;
+	transition: 0.3s;
+}
+
+a:hover
+{
+	background: #00ff41;
+	color: #000;
+}
+
+.funny
+{
+	width: 200px;
+	height: 200px;
+	text-align: center;
+	opacity: 0.8;
+	margin-top: 10px;
+	overflow: hidden;
+}
+
+.funny img
+{
+	width: 100%;
+	height: 100%;
+	object-fit: fill;
+	display: block;
+}
