@@ -1,0 +1,97 @@
+/* Layout concept: a student's project ledger — each project opens with its 42
+   file header, the way every .c file at school does; games open on a stage. */
+:root {
+  --paper: #eef1ef;
+  --panel: #ffffff;
+  --ink: #141a19;
+  --muted: #5b6764;
+  --line: #cfd8d5;
+  --accent: #0a7a72;
+  --accent-ink: #ffffff;
+  --signal: #b5530c;
+  --stage: #0b0f0e;
+  --stage-ink: #dfe7e4;
+  --display: "Big Shoulders Display", "Arial Narrow", Impact, sans-serif;
+  --body: "Atkinson Hyperlegible", "Segoe UI", system-ui, sans-serif;
+  --mono: "Martian Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+  --radius: 6px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #0f1413; --panel: #161d1b; --ink: #e4ebe8; --muted: #93a29e; --line: #2a3532;
+    --accent: #43c9bb; --accent-ink: #06201d; --signal: #f0a050; --stage: #050807; --stage-ink: #dfe7e4;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #0f1413; --panel: #161d1b; --ink: #e4ebe8; --muted: #93a29e; --line: #2a3532;
+  --accent: #43c9bb; --accent-ink: #06201d; --signal: #f0a050; --stage: #050807; --stage-ink: #dfe7e4;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font: 1rem/1.6 var(--body);
+}
+a { color: var(--accent); }
+a:focus-visible, button:focus-visible, select:focus-visible, canvas:focus-visible {
+  outline: 2px solid var(--accent); outline-offset: 2px;
+}
+.wrap {
+  max-width: 72rem;
+  margin: 0 auto;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+h1, h2, h3 { font-family: var(--display); font-weight: 800; line-height: 1; text-wrap: balance; margin: 0; letter-spacing: 0.01em; }
+.label {
+  font: 500 0.7rem/1.4 var(--mono);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+}
+kbd {
+  font: 500 0.72rem/1 var(--mono);
+  display: inline-block;
+  min-width: 1.9em;
+  text-align: center;
+  padding: 0.35em 0.45em;
+  border: 1px solid var(--line);
+  border-bottom-width: 2px;
+  border-radius: 4px;
+  background: var(--panel);
+  color: var(--ink);
+}
+
+/* buttons */
+.btn {
+  display: inline-flex; align-items: center; gap: 0.5em;
+  font: 600 0.9rem/1 var(--body);
+  padding: 0.75em 1.15em;
+  border-radius: var(--radius);
+  border: 1px solid var(--line);
+  background: var(--panel);
+  color: var(--ink);
+  text-decoration: none;
+  cursor: pointer;
+}
+.btn:hover { border-color: var(--accent); }
+.btn.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+.btn.primary:hover { filter: brightness(1.08); }
+.btn[disabled] { opacity: 0.5; cursor: default; }
+
+/* the 42 file header */
+.header42 {
+  font: 400 0.68rem/1.45 var(--mono);
+  color: var(--muted);
+  white-space: pre;
+  overflow-x: auto;
+  margin: 0;
+}
+.header42 b { color: var(--accent); font-weight: 600; }
+
+@media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }

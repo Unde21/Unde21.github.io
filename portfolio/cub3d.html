@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Cub3D · Tournoi des Quatre Sorciers</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<script src="coi-serviceworker.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Big+Shoulders+Display:wght@700;800&family=Martian+Mono:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="site.css">
+<link rel="stylesheet" href="game.css">
+</head>
+<body>
+<header class="bar">
+  <div class="wrap">
+    <a class="back" href="index.html">← Projets</a>
+    <h1>Cub3D</h1>
+    <span class="label">C · raycasting · 17 threads</span>
+    <span class="spacer"></span>
+    <a class="btn" href="https://github.com/Unde21/Cub3D" target="_blank" rel="noopener">Code sur GitHub</a>
+  </div>
+</header>
+
+<main class="wrap play">
+  <div class="toolbar">
+    <div class="field">
+      <label class="label" for="variant">Version</label>
+      <select id="variant"></select>
+    </div>
+    <div class="field">
+      <label class="label" for="map">Carte (.cub)</label>
+      <select id="map"></select>
+    </div>
+    <span class="spacer"></span>
+    <button class="btn" id="sound" type="button" aria-pressed="true">Son activé</button>
+    <button class="btn" id="restart" type="button">Recommencer</button>
+    <button class="btn" id="fullscreen" type="button">Plein écran</button>
+  </div>
+  <p class="note" id="variant-note"></p>
+
+  <div class="stage" id="stage">
+    <canvas id="screen" tabindex="0" width="1920" height="1110" aria-label="Écran du jeu Cub3D"></canvas>
+    <div class="overlay" id="overlay" data-state="ready">
+      <h2 id="overlay-title">Cub3D</h2>
+      <p id="overlay-text"></p>
+      <div class="progress" id="progress" hidden><span></span></div>
+      <button class="btn primary" id="start" type="button">Lancer la partie</button>
+    </div>
+  </div>
+
+  <div class="about">
+    <section>
+      <h3>Commandes</h3>
+      <dl class="keys">
+        <dt><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd></dt><dd>Se déplacer (ZQSD sur un clavier AZERTY)</dd>
+        <dt><kbd>Souris</kbd></dt><dd>Regarder autour. Clique dans le jeu pour capturer la souris</dd>
+        <dt><kbd>←</kbd><kbd>→</kbd></dt><dd>Tourner au clavier</dd>
+        <dt><kbd>Clic</kbd></dt><dd>Lancer le sort sélectionné</dd>
+        <dt><kbd>N</kbd></dt><dd>Ouvrir le grimoire des sorts</dd>
+        <dt><kbd>M</kbd></dt><dd>Carte du labyrinthe</dd>
+        <dt><kbd>Maj</kbd></dt><dd>Courir</dd>
+        <dt><kbd>Échap</kbd></dt><dd>Pause (appuie deux fois si la souris est capturée)</dd>
+      </dl>
+    </section>
+    <section>
+      <h3>Le jeu</h3>
+      <p>Un raycaster façon Wolfenstein transformé en tournoi de sorciers : choisis ta coalition, explore le labyrinthe, ouvre les portes avec Lumos, voyage par le réseau de cheminées et affronte araignées, oiseaux et sorciers. Projet réalisé en binôme avec ale-guel.</p>
+    </section>
+    <section>
+      <h3>Sous le capot</h3>
+      <p>Le rendu est découpé entre 16 threads (ciel, sol, rayons, affichage) synchronisés par des barrières. Dans le navigateur, chaque pthread devient un Web Worker qui partage la mémoire du programme. Les sons, lancés à l’origine avec <code>fork</code> et <code>cvlc</code>, passent par l’audio du navigateur.</p>
+    </section>
+  </div>
+
+  <div class="field">
+    <span class="label">Sortie du programme</span>
+    <pre class="log" id="log"></pre>
+  </div>
+</main>
+
+<script src="games/mlxweb/runtime.js"></script>
+<script src="games/mlxweb/player.js"></script>
+<script>
+Player.mount({
+  title: 'Cub3D',
+  size: [1920, 1110],
+  variants: [
+    {
+      label: 'Bonus : Tournoi des Quatre Sorciers',
+      wasm: 'games/cub3d/cub3d_bonus.wasm',
+      assets: 'games/cub3d/bonus',
+      program: 'cub3D_bonus',
+      threads: 18,
+      mouse: 'relative',
+      budgetMs: 14,
+      soundBase: 'games/cub3d/',
+      pitch: 'Environ 40 Mo de textures à télécharger au premier lancement.',
+      loadingText: 'Téléchargement des textures (environ 40 Mo).',
+      note: 'Version complète avec sorts, ennemis, sons et menus. Un ordinateur récent est conseillé.',
+      maps: [
+        { label: 'Le tournoi', path: 'maps/bonus/valid/map_bonus.cub' },
+        { label: 'Labyrinthe', path: 'maps/bonus/valid/maze_map.cub' },
+        { label: 'Portes', path: 'maps/bonus/valid/door_map.cub' },
+        { label: 'Carte fun', path: 'maps/bonus/valid/fun_map.cub' },
+        { label: 'Petite carte', path: 'maps/bonus/valid/small_map.cub' },
+      ],
+    },
+    {
+      label: 'Partie obligatoire',
+      wasm: 'games/cub3d/cub3d.wasm',
+      assets: 'games/cub3d/data',
+      program: 'cub3D',
+      mouse: 'relative',
+      budgetMs: 12,
+      pitch: 'Le raycaster du sujet : murs texturés par orientation, mini-carte.',
+      note: 'Le sujet de base : quatre textures de murs, couleurs de sol et de plafond, mini-carte.',
+      maps: [
+        { label: 'Labyrinthe', path: 'maps/mandatory/valid/maze_map.cub' },
+        { label: 'Petite carte', path: 'maps/mandatory/valid/small_map.cub' },
+        { label: 'Couloirs', path: 'maps/t1.cub' },
+      ],
+    },
+  ],
+});
+</script>
+</body>
+</html>
