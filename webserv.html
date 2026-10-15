@@ -1,0 +1,400 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>webserv · An HTTP server in the page</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Big+Shoulders+Display:wght@700;800&family=Martian+Mono:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="site.css">
+<link rel="stylesheet" href="game.css">
+<style>
+  .browser { display: grid; border-radius: var(--radius); overflow: hidden; box-shadow: 0 0 0 1px var(--line); background: var(--panel); }
+  .navbar { display: flex; gap: 0.4rem; align-items: center; padding: 0.5rem; border-bottom: 1px solid var(--line); flex-wrap: wrap; }
+  .navbar .icon { font: 600 0.95rem/1 var(--mono); width: 2.2rem; height: 2.2rem; border-radius: var(--radius); border: 1px solid var(--line); background: transparent; color: var(--ink); cursor: pointer; }
+  .navbar .icon:hover { border-color: var(--accent); }
+  .address { flex: 1; min-width: 12rem; display: flex; align-items: center; border: 1px solid var(--line); border-radius: 999px; background: var(--paper); padding: 0 0.3rem 0 0.9rem; }
+  .address:focus-within { border-color: var(--accent); }
+  .address span { font: 500 0.82rem/1 var(--mono); color: var(--muted); white-space: nowrap; }
+  .address input { flex: 1; min-width: 0; font: 500 0.82rem/1 var(--mono); border: 0; background: transparent; color: var(--ink); padding: 0.65em 0.2em; outline: none; }
+  .quick { display: flex; flex-wrap: wrap; gap: 0.4rem; padding: 0.5rem; border-bottom: 1px solid var(--line); }
+  .chip {
+    font: 500 0.72rem/1.2 var(--mono); padding: 0.5em 0.75em; border-radius: 999px;
+    border: 1px solid var(--line); background: transparent; color: var(--ink); cursor: pointer; text-align: left;
+  }
+  .chip:hover { border-color: var(--accent); }
+  .chip b { font-weight: 600; color: var(--accent); }
+  .viewport { position: relative; height: clamp(26rem, 66vh, 44rem); background: #1a1a1a; }
+  .viewport iframe { display: block; width: 100%; height: 100%; border: 0; background: #1a1a1a; }
+
+  .panels { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 1.25rem; align-items: start; }
+  .panel { display: grid; gap: 0.6rem; min-width: 0; }
+  .panel h3 { font-size: 1.35rem; }
+  .panel .head { display: flex; align-items: baseline; gap: 0.75rem; flex-wrap: wrap; }
+  .panel .head .spacer { flex: 1; }
+  .reqs { list-style: none; margin: 0; padding: 0; border: 1px solid var(--line); border-radius: var(--radius); background: var(--panel); max-height: 21rem; overflow: auto; }
+  .reqs:empty::before { content: "Requests made by the browser above show up here."; display: block; padding: 0.9rem; color: var(--muted); font-size: 0.9rem; }
+  .reqs li { display: grid; grid-template-columns: 4.2rem 3rem minmax(0, 1fr) auto; gap: 0.6rem; align-items: baseline; padding: 0.42rem 0.75rem; border-bottom: 1px solid var(--line); cursor: pointer; font: 500 0.74rem/1.35 var(--mono); }
+  .reqs li:hover, .reqs li[aria-selected="true"] { background: color-mix(in srgb, var(--accent) 9%, transparent); }
+  .reqs .m { color: var(--muted); }
+  .reqs .p { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .reqs .t { color: var(--muted); text-align: right; white-space: nowrap; }
+  .s2 { color: #2f9e5b; } .s3 { color: #3d7fd6; } .s4 { color: #d08a1f; } .s5, .s0 { color: #d64545; }
+  :root[data-theme="dark"] .s2 { color: #5fd18f; }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .s2 { color: #5fd18f; } }
+  .raw { font: 400 0.72rem/1.5 var(--mono); background: var(--stage); color: var(--stage-ink); border-radius: var(--radius); padding: 0.75rem 0.9rem; margin: 0; max-height: 21rem; overflow: auto; white-space: pre-wrap; overflow-wrap: anywhere; }
+  .raw .dim { opacity: 0.55; }
+  .raw .k { color: #7fb7ff; }
+  .raw .line1 { color: #9ee6b8; font-weight: 600; }
+  textarea.req {
+    font: 400 0.76rem/1.5 var(--mono); width: 100%; min-height: 9.5rem; resize: vertical;
+    background: var(--stage); color: var(--stage-ink); border: 1px solid var(--line); border-radius: var(--radius); padding: 0.75rem 0.9rem;
+  }
+  textarea.req:focus { outline: none; border-color: var(--accent); }
+  .presets { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+  .row { display: flex; gap: 0.6rem; align-items: center; flex-wrap: wrap; }
+  .status-pill { font: 600 0.72rem/1 var(--mono); padding: 0.45em 0.7em; border-radius: 999px; background: color-mix(in srgb, var(--accent) 12%, transparent); }
+  .serverlog { max-height: 12rem; }
+  .serverlog:empty::before { content: "webserv’s stdout and stderr show up here."; }
+  .about ul { margin: 0; padding-left: 1.1rem; color: var(--muted); display: grid; gap: 0.3rem; }
+  @media (max-width: 900px) { .panels { grid-template-columns: 1fr; } }
+  @media (max-width: 560px) { .address { order: -1; flex-basis: 100%; min-width: 0; } .navbar .btn { margin-left: auto; } }
+</style>
+</head>
+<body>
+<header class="bar">
+  <div class="wrap">
+    <a class="back" href="index.html">← Projects</a>
+    <h1>webserv</h1>
+    <span class="label">C++98 · epoll · CGI · HTTP/1.1</span>
+    <span class="spacer"></span>
+    <a class="btn" href="https://github.com/Unde21/webserv" target="_blank" rel="noopener">Code on GitHub</a>
+  </div>
+</header>
+
+<main class="wrap play">
+  <div class="browser">
+    <form class="navbar" id="nav">
+      <button class="icon" type="button" id="back" title="Back" aria-label="Back">←</button>
+      <button class="icon" type="button" id="fwd" title="Forward" aria-label="Forward">→</button>
+      <button class="icon" type="button" id="reload" title="Reload" aria-label="Reload">⟳</button>
+      <label class="address"><span>http://localhost:8080</span><input id="url" value="/" spellcheck="false" autocomplete="off" aria-label="Path"></label>
+      <button class="btn" type="submit">Go</button>
+    </form>
+    <div class="quick" aria-label="Pages">
+      <button class="chip" type="button" data-go="/">Redirect <b>/</b></button>
+      <button class="chip" type="button" data-go="/Dart">Darts <b>/Dart</b></button>
+      <button class="chip" type="button" data-go="/Account">Sign up / in <b>/Account</b></button>
+      <button class="chip" type="button" data-go="/cgi-bin/env.js?name=42%20Lyon">CGI <b>/cgi-bin/env.js</b></button>
+      <button class="chip" type="button" data-go="/cgi-bin/guestbook.js">CGI + POST <b>/cgi-bin/guestbook.js</b></button>
+      <button class="chip" type="button" data-go="/img/missing.png">Error page <b>/img/missing.png</b></button>
+    </div>
+    <div class="viewport">
+      <iframe id="view" title="Site served by webserv"></iframe>
+      <div class="overlay" id="overlay" data-state="loading">
+        <h2 id="ov-title">Starting webserv</h2>
+        <p id="ov-text">Downloading the server and its website…</p>
+        <div class="progress" id="progress"><span></span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="panels">
+    <section class="panel">
+      <div class="head"><h3>Requests</h3><span class="label" id="count">0 requests</span><span class="spacer"></span><button class="chip" type="button" id="clear">Clear</button></div>
+      <ul class="reqs" id="reqs"></ul>
+      <pre class="raw" id="detail" hidden></pre>
+    </section>
+    <section class="panel">
+      <div class="head"><h3>Raw HTTP</h3><span class="label">like telnet localhost 8080</span></div>
+      <div class="presets" id="presets">
+        <button class="chip" type="button" data-raw="DELETE /Home HTTP/1.1|Host: localhost:8080||">405 <b>DELETE</b></button>
+        <button class="chip" type="button" data-raw="POST /signin HTTP/1.1|Host: localhost:8080||">411 <b>POST, no body</b></button>
+        <button class="chip" type="button" data-raw="POST /cgi-bin/guestbook.js HTTP/1.1|Host: localhost:8080|Transfer-Encoding: chunked||9|name=Chun|D|k&amp;message=hi!|0||">Chunked <b>POST to CGI</b></button>
+        <button class="chip" type="button" data-raw="POST /signup HTTP/1.1|Host: localhost:8080|Content-Type: application/x-www-form-urlencoded|Content-Length: 44||username=sam&amp;email=s@42.fr&amp;password=hunter22">Sign up <b>Set-Cookie</b></button>
+        <button class="chip" type="button" data-raw="GET /Home HTTP/1.0||">HTTP/1.0 <b>no Host</b></button>
+        <button class="chip" type="button" data-raw="GET /Home||">No version <b>GET /Home</b></button>
+      </div>
+      <textarea class="req" id="raw" spellcheck="false" aria-label="Raw HTTP request">GET / HTTP/1.1
+Host: localhost:8080
+
+</textarea>
+      <div class="row"><button class="btn primary" id="send" type="button">Send</button><span class="note">Each line ends with CRLF. The response appears below.</span></div>
+      <pre class="raw" id="rawres" hidden></pre>
+    </section>
+  </div>
+
+  <div class="field">
+    <span class="label">Server output</span>
+    <pre class="log serverlog" id="log"></pre>
+  </div>
+
+  <div class="about">
+    <section>
+      <h3>The project</h3>
+      <p>An HTTP/1.1 server written from scratch in C++98 by a team of three: a configuration file in the spirit of nginx, one non-blocking <code>epoll</code> loop for every connection, static files, uploads, <code>DELETE</code>, custom error pages, chunked transfer and CGI. The darts website you browse above was made by the team to test it.</p>
+    </section>
+    <section>
+      <h3>What is real</h3>
+      <ul>
+        <li>every page, image and redirect above is answered by webserv’s own code, from <code>www/config</code></li>
+        <li>CGI scripts are started with <code>fork()</code> + <code>execve()</code>, their output read from a pipe and sent back chunked</li>
+        <li>accounts live in the server’s memory, as in the original</li>
+        <li>CGI scripts are JavaScript here, because there is no Python in the browser; one <code>/cgi-bin/</code> location is added to the config for them</li>
+      </ul>
+    </section>
+    <section>
+      <h3>Under the hood</h3>
+      <p>The C++ code is compiled to WebAssembly unchanged. A small kernel in JavaScript gives it sockets, <code>epoll</code>, pipes and processes on a virtual network. A Service Worker catches the requests made by the frame above and the page turns each into a raw HTTP request on <code>localhost:8080</code>, exactly the bytes shown in the list.</p>
+    </section>
+  </div>
+</main>
+
+<script src="games/mlxweb/posix.js"></script>
+<script src="games/mlxweb/commands.js"></script>
+<script src="games/webserv/http-client.js"></script>
+<script>
+(function () {
+  'use strict';
+  const $ = (id) => document.getElementById(id);
+  const ROOT = '/srv/webserv';
+  const PORT = 8080;
+  const SCOPE = 'games/webserv/net/';
+  const sid = Math.random().toString(36).slice(2, 10);
+  const prefix = new URL(SCOPE + sid + '/', location.href).pathname;
+  const enc = new TextEncoder(), dec = new TextDecoder(), latin1 = new TextDecoder('latin1');
+  let sys = null;
+  const jar = new Map();     // cookies set by webserv (a browser would keep them)
+  const exchanges = [];
+
+  function show(state, title, text) {
+    const ov = $('overlay');
+    ov.hidden = !state;
+    if (!state) return;
+    ov.dataset.state = state;
+    $('ov-title').textContent = title;
+    $('ov-text').textContent = text;
+    $('progress').hidden = state !== 'loading';
+  }
+  const bar = (f) => { $('progress').firstElementChild.style.width = Math.round(f * 100) + '%'; };
+
+  // ---------------- server output (ANSI colours -> spans)
+  const logBox = $('log');
+  let logText = '';
+  const COLORS = { 31: '#e5534b', 32: '#57c07f', 33: '#e0a33a', 34: '#6ea8fe', 35: '#c38bf0', 36: '#4fc4cf' };
+  function esc(s) { return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+  function ansi(s) {
+    let open = 0, out = '';
+    for (const part of s.split(/(\x1b\[[0-9;]*m)/)) {
+      const m = /^\x1b\[([0-9;]*)m$/.exec(part);
+      if (!m) { out += esc(part); continue; }
+      while (open) { out += '</span>'; open--; }
+      const codes = m[1].split(';').map(Number);
+      const c = codes.find((x) => COLORS[x]);
+      const bold = codes.includes(1);
+      if (c || bold) { out += `<span style="${c ? 'color:' + COLORS[c] + ';' : ''}${bold ? 'font-weight:600' : ''}">`; open++; }
+    }
+    while (open) { out += '</span>'; open--; }
+    return out;
+  }
+  let logQueued = false;
+  function log(bytes) {
+    logText += dec.decode(bytes);
+    if (logText.length > 40000) logText = logText.slice(-30000);
+    if (logQueued) return;
+    logQueued = true;
+    requestAnimationFrame(() => {
+      logQueued = false;
+      logBox.innerHTML = ansi(logText.replace(/\n{3,}/g, '\n\n'));
+      logBox.scrollTop = logBox.scrollHeight;
+    });
+  }
+
+  // ---------------- file system
+  async function loadSite() {
+    const index = await (await fetch('games/webserv/site.json')).json();
+    const resp = await fetch('games/webserv/site.pak');
+    const total = index.packed || 0;
+    let got = 0;
+    const counted = resp.body.pipeThrough(new TransformStream({ transform(c, ctl) { got += c.length; if (total) bar(0.15 + 0.6 * got / total); ctl.enqueue(c); } }));
+    const raw = new Uint8Array(await new Response(index.gzip ? counted.pipeThrough(new DecompressionStream('gzip')) : counted).arrayBuffer());
+    return { index, raw };
+  }
+  function makeFs(site) {
+    const fs = new Posix.FS();
+    for (const d of ['/bin', '/usr/bin', '/tmp', ROOT]) fs.mkdirp(d);
+    for (const name of Object.keys(PosixCommands)) fs.writeFile('/bin/' + name, '#!' + name + '\n', 0o755).exec = name;
+    fs.writeFile('/usr/bin/node', '#!node\n', 0o755).exec = 'node';
+    for (const [path, [off, len]] of Object.entries(site.index.files)) {
+      const full = ROOT + '/' + path;
+      fs.mkdirp(full.slice(0, full.lastIndexOf('/')));
+      fs.writeFile(full, site.raw.slice(off, off + len), path.startsWith('www/cgi-bin/') ? 0o755 : 0o644);
+    }
+    return fs;
+  }
+
+  // ---------------- requests from the frame (via the Service Worker)
+  function cookieHeader() { return [...jar].map(([k, v]) => k + '=' + v).join('; '); }
+  function keepCookies(res) {
+    for (const [k, v] of res.headers) {
+      if (k.toLowerCase() !== 'set-cookie') continue;
+      const [pair, ...attrs] = v.split(';');
+      const i = pair.indexOf('=');
+      const name = pair.slice(0, i).trim(), value = pair.slice(i + 1).trim();
+      if (attrs.some((a) => /^\s*max-age\s*=\s*0\s*$/i.test(a)) || value === '') jar.delete(name); else jar.set(name, value);
+    }
+  }
+  const KEEP = ['accept', 'content-type', 'accept-language', 'cache-control'];
+  function buildRequest(m) {
+    const lines = [`${m.method} ${m.path} HTTP/1.1`, `Host: localhost:${PORT}`];
+    for (const [k, v] of m.headers) if (KEEP.includes(k.toLowerCase())) lines.push(k.replace(/(^|-)\w/g, (c) => c.toUpperCase()) + ': ' + v);
+    if (jar.size) lines.push('Cookie: ' + cookieHeader());
+    const body = m.body ? new Uint8Array(m.body) : null;
+    if (body) lines.push('Content-Length: ' + body.length);
+    lines.push('Connection: keep-alive');
+    const head = enc.encode(lines.join('\r\n') + '\r\n\r\n');
+    return body ? HttpClient.concat([head, body]) : head;
+  }
+
+  const channel = new BroadcastChannel('webserv-net');
+  channel.onmessage = async (e) => {
+    const m = e.data;
+    if (!m || m.type !== 'request' || m.sid !== sid) return;
+    if (!sys || !sys.net.ports.has(PORT)) { channel.postMessage({ type: 'response', id: m.id, error: 'webserv is not listening' }); return; }
+    const raw = buildRequest(m);
+    let res;
+    try { res = await HttpClient.exchange(sys.net, PORT, raw, { timeout: 20000, headOnly: m.method === 'HEAD' }); }
+    catch (err) { channel.postMessage({ type: 'response', id: m.id, error: String(err.message || err) }); return; }
+    keepCookies(res);
+    record(raw, res, 'browser');
+    const body = res.body.slice().buffer;
+    channel.postMessage({ type: 'response', id: m.id, method: m.method, status: res.status || 502, statusText: res.statusText, headers: res.headers, body }, [body]);
+  };
+
+  // ---------------- request list
+  const list = $('reqs');
+  function record(raw, res, origin) {
+    const reqText = latin1.decode(raw);
+    const first = reqText.split('\r\n')[0];
+    const [method, path] = first.split(' ');
+    const x = { raw, res, origin, method: method || '?', path: path || '', i: exchanges.length };
+    exchanges.push(x);
+    const li = document.createElement('li');
+    const cls = 's' + String(res.status || 0)[0];
+    li.innerHTML = `<span class="m">${esc(x.method.slice(0, 7))}</span><span class="${cls}">${res.status || '—'}</span><span class="p" title="${esc(x.path)}">${esc(x.path)}</span><span class="t">${res.ms} ms · ${fmtSize(res.body.length)}</span>`;
+    li.tabIndex = 0;
+    li.addEventListener('click', () => select(x, li));
+    li.addEventListener('keydown', (e) => { if (e.key === 'Enter') select(x, li); });
+    list.appendChild(li);
+    list.scrollTop = list.scrollHeight;
+    $('count').textContent = exchanges.length + (exchanges.length === 1 ? ' request' : ' requests');
+  }
+  function fmtSize(n) { return n < 1024 ? n + ' B' : (n / 1024).toFixed(n < 10240 ? 1 : 0) + ' kB'; }
+  function rawView(bytes, limit) {
+    const end = bytes.length;
+    let i = 0;
+    for (; i + 3 < end; i++) if (bytes[i] === 13 && bytes[i + 1] === 10 && bytes[i + 2] === 13 && bytes[i + 3] === 10) break;
+    const headEnd = i + 3 < end ? i : end;
+    const head = latin1.decode(bytes.subarray(0, headEnd)).split('\r\n');
+    let html = `<span class="line1">${esc(head[0] || '')}</span>\n`;
+    for (const l of head.slice(1)) { const c = l.indexOf(':'); html += c > 0 ? `<span class="k">${esc(l.slice(0, c))}</span>${esc(l.slice(c))}\n` : esc(l) + '\n'; }
+    const body = bytes.subarray(Math.min(end, headEnd + 4));
+    if (body.length) {
+      html += '\n';
+      const sample = body.subarray(0, limit);
+      const binary = sample.some((b) => b === 0 || (b < 9));
+      html += binary ? `<span class="dim">[${fmtSize(body.length)} of binary data]</span>` : esc(dec.decode(sample)) + (body.length > limit ? `<span class="dim">\n… ${fmtSize(body.length - limit)} more</span>` : '');
+    }
+    return html;
+  }
+  function select(x, li) {
+    list.querySelectorAll('li[aria-selected]').forEach((n) => n.removeAttribute('aria-selected'));
+    li.setAttribute('aria-selected', 'true');
+    const d = $('detail');
+    d.hidden = false;
+    d.innerHTML = `<span class="dim">── request (${x.origin}) ──</span>\n${rawView(x.raw, 1500)}\n\n<span class="dim">── response · ${x.res.ms} ms ──</span>\n${x.res.ok ? rawView(x.res.raw, 1200) : '<span class="dim">no response' + (x.res.timedOut ? ' (timeout)' : '') + '</span>'}`;
+  }
+  $('clear').addEventListener('click', () => { list.innerHTML = ''; exchanges.length = 0; $('detail').hidden = true; $('count').textContent = '0 requests'; });
+
+  // ---------------- raw console
+  document.querySelectorAll('#presets .chip').forEach((b) => b.addEventListener('click', () => {
+    $('raw').value = b.dataset.raw.split('|').join('\n');
+    sendRaw();
+  }));
+  async function sendRaw() {
+    if (!sys) return;
+    const text = $('raw').value.replace(/\r?\n/g, '\r\n');
+    const raw = enc.encode(text.endsWith('\r\n') || text.includes('\r\n\r\n') ? text : text + '\r\n');
+    const out = $('rawres');
+    out.hidden = false;
+    out.innerHTML = '<span class="dim">waiting for webserv…</span>';
+    const res = await HttpClient.exchange(sys.net, PORT, raw, { timeout: 4000 });
+    keepCookies(res);
+    record(raw, res, 'raw console');
+    out.innerHTML = res.raw.length ? rawView(res.raw, 4000) : `<span class="dim">${res.timedOut ? 'No complete response after 4 s: webserv is still waiting for the rest of the request.' : 'The connection was closed without a response.'}</span>`;
+  }
+  $('send').addEventListener('click', sendRaw);
+  $('raw').addEventListener('keydown', (e) => { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); sendRaw(); } });
+
+  // ---------------- the frame
+  const view = $('view');
+  function go(path) {
+    if (!path.startsWith('/')) path = '/' + path;
+    view.src = prefix + path.slice(1);
+  }
+  view.addEventListener('load', () => {
+    try {
+      const l = view.contentWindow.location;
+      if (l.pathname.startsWith(prefix)) $('url').value = '/' + l.pathname.slice(prefix.length) + l.search;
+    } catch (e) { /* not ours */ }
+  });
+  $('nav').addEventListener('submit', (e) => { e.preventDefault(); go($('url').value.trim() || '/'); });
+  $('back').addEventListener('click', () => { try { view.contentWindow.history.back(); } catch (e) { /* empty */ } });
+  $('fwd').addEventListener('click', () => { try { view.contentWindow.history.forward(); } catch (e) { /* empty */ } });
+  $('reload').addEventListener('click', () => { try { view.contentWindow.location.reload(); } catch (e) { go($('url').value); } });
+  document.querySelectorAll('.quick .chip').forEach((b) => b.addEventListener('click', () => go(b.dataset.go)));
+
+  async function startWorker() {
+    if (!('serviceWorker' in navigator)) throw new Error('This browser has no Service Workers, which the page needs to show the site.');
+    const reg = await navigator.serviceWorker.register('games/webserv/sw.js', { scope: SCOPE });
+    const w = reg.active || reg.waiting || reg.installing;
+    if (w && w.state !== 'activated') {
+      await new Promise((resolve) => w.addEventListener('statechange', () => { if (w.state === 'activated') resolve(); }));
+    }
+  }
+
+  // ---------------- boot
+  (async () => {
+    try {
+      bar(0.05);
+      const [module, site] = await Promise.all([
+        WebAssembly.compileStreaming(fetch('games/webserv/webserv.wasm')).catch(async () => WebAssembly.compile(await (await fetch('games/webserv/webserv.wasm')).arrayBuffer())),
+        loadSite(),
+        startWorker(),
+      ]);
+      bar(0.85);
+      $('ov-text').textContent = 'Starting the server on localhost:8080…';
+      let listening;
+      const ready = new Promise((r) => { listening = r; });
+      sys = Posix.create({
+        fs: makeFs(site), commands: PosixCommands, programs: { webserv: module },
+        onListen: (port) => { if (port === PORT) listening(); },
+        onSessionEnd: (status) => show('error', 'webserv stopped', 'The server exited with status ' + ((status >> 8) & 0xff) + (status & 0x7f ? ' (signal ' + (status & 0x7f) + ')' : '') + '. Reload the page to start it again.'),
+      });
+      log(enc.encode('$ ./webserv web.conf\n'));
+      await sys.spawnRoot('webserv', ['./webserv', 'web.conf'], ['PWD=' + ROOT, 'PATH=/usr/bin:/bin', 'HOME=/tmp'], ROOT, { stdout: log, stderr: log });
+      await Promise.race([ready, new Promise((_, no) => setTimeout(() => no(new Error('webserv did not start listening')), 10000))]);
+      bar(1);
+      show(null);
+      go(new URLSearchParams(location.search).get('path') || '/Dart');
+    } catch (e) {
+      console.error(e);
+      show('error', 'Could not start webserv', String(e.message || e));
+    }
+  })();
+  window.webserv = { get sys() { return sys; }, exchanges, prefix };
+})();
+</script>
+</body>
+</html>

@@ -23,6 +23,9 @@ struct sigaction
 # define SA_RESTART 0x10000000
 # define SA_NODEFER 0x40000000
 # define SA_RESETHAND 0x80000000
+# ifdef __cplusplus
+extern "C" {
+# endif
 int	sigaction(int sig, const struct sigaction *act, struct sigaction *old);
 int	sigemptyset(sigset_t *set);
 int	sigfillset(sigset_t *set);
@@ -30,4 +33,7 @@ int	sigaddset(sigset_t *set, int sig);
 int	sigdelset(sigset_t *set, int sig);
 int	sigismember(const sigset_t *set, int sig);
 int	kill(pid_t pid, int sig);
+# ifdef __cplusplus
+}
+# endif
 #endif

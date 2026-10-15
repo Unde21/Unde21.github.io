@@ -5,6 +5,7 @@ A static site (GitHub Pages) that presents my 42 projects and makes them playabl
 - `index.html`: home page
 - `so_long.html`, `cub3d.html`: game pages
 - `minishell.html`: web terminal (xterm.js) running the real minishell
+- `webserv.html`: the real webserv running in the page, with a browser frame, a request log and a raw HTTP console
 - `philosophers.html`: dining philosophers simulation (the program runs in a Web Worker started by `games/mlxweb/wasi-worker.js`)
 - `games/`: programs compiled to WebAssembly, with their files (maps, textures, sounds)
 - `coi-serviceworker.js`: enables cross-origin isolation on GitHub Pages (needed by the Cub3D bonus threads)
@@ -39,6 +40,14 @@ Minishell: built with `POSIX=1`, each process is a WebAssembly instance with its
 line editor (the readline API is in `tools/mlxweb/mlx_posix.c`). The commands in `/bin`
 (`ls`, `grep`, `sort`…) are written in JavaScript in `games/mlxweb/commands.js`. No minishell
 file is modified.
+
+webserv: C++98 built with the same `POSIX=1` mode. `tools/mlxweb/mlx_net.c` adds sockets,
+`getaddrinfo` and `epoll` on top of a virtual network in `posix.js`; the page connects to port
+8080 and speaks raw HTTP (`games/webserv/http-client.js`). A Service Worker
+(`games/webserv/sw.js`) catches the requests of the iframe and hands them to the page, so the
+team's website is browsed through webserv itself. The config is `www/config` plus one
+`/cgi-bin/` location for JavaScript CGI scripts (`tools/mlxweb/ports/webserv/`), run by a small
+node-like interpreter, because Python is not available in the browser. No webserv file is modified.
 
 Web-only setting: the Cub3D bonus mouse sensitivity starts at 70 % of the pause-menu bar
 (`sensitivity = 110` instead of 175), applied at build time by `tools/mlxweb/ports/build_all.sh`.
