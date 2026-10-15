@@ -1,0 +1,337 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Philosophers · Le dîner des philosophes</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Big+Shoulders+Display:wght@700;800&family=Martian+Mono:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="site.css">
+<link rel="stylesheet" href="game.css">
+<style>
+  :root {
+    --think: #8a9894;
+    --fork: #e0a33a;
+    --eat: #3fbf7f;
+    --sleep: #5b8def;
+    --dead: #e5534b;
+  }
+  .params { display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: end; }
+  .field input {
+    font: 500 0.95rem/1 var(--mono);
+    width: 7.5rem; max-width: 100%;
+    padding: 0.55em 0.7em;
+    border-radius: var(--radius);
+    border: 1px solid var(--line);
+    background: var(--panel);
+    color: var(--ink);
+  }
+  .field input:invalid { border-color: var(--signal); }
+  .presets { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+  .chip {
+    font: 500 0.72rem/1 var(--mono);
+    padding: 0.55em 0.75em;
+    border-radius: 999px;
+    border: 1px solid var(--line);
+    background: transparent;
+    color: var(--ink);
+    cursor: pointer;
+  }
+  .chip:hover { border-color: var(--accent); }
+  .chip b { font-weight: 600; color: var(--accent); }
+  .cmd { font: 500 0.8rem/1.4 var(--mono); color: var(--muted); margin: 0; overflow-wrap: anywhere; }
+  .cmd b { color: var(--ink); font-weight: 500; }
+
+  .sim { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); gap: 1rem; align-items: start; }
+  .sim .stage { aspect-ratio: 1 / 1; width: 100%; max-width: 100%; height: auto; }
+  .side { display: grid; grid-template-rows: auto auto 1fr; gap: 0.9rem; min-width: 0; }
+  .stats { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.6rem; margin: 0; }
+  .stats div { padding: 0.7rem 0.8rem; border: 1px solid var(--line); border-radius: var(--radius); background: var(--panel); min-width: 0; }
+  .stats dt { font: 500 0.66rem/1.3 var(--mono); text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
+  .stats dd { margin: 0.2rem 0 0; font: 600 1.25rem/1.2 var(--mono); font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+  .stats dd.state-dead { color: var(--dead); }
+  .stats dd.state-done { color: var(--eat); }
+  .legend { display: flex; flex-wrap: wrap; gap: 0.4rem 1rem; list-style: none; margin: 0; padding: 0; font-size: 0.85rem; color: var(--muted); }
+  .legend li { display: flex; align-items: center; gap: 0.4rem; }
+  .legend i { width: 0.8rem; height: 0.8rem; border-radius: 50%; display: inline-block; }
+  .side .log { max-height: none; height: clamp(14rem, 34vw, 30rem); }
+  .side .log:empty::before { content: "Chaque ligne affichée par le programme apparaît ici, avec son horodatage en ms."; }
+  @media (max-width: 860px) { .sim { grid-template-columns: 1fr; } .side .log { height: 16rem; } }
+</style>
+</head>
+<body>
+<header class="bar">
+  <div class="wrap">
+    <a class="back" href="index.html">← Projets</a>
+    <h1>Philosophers</h1>
+    <span class="label">C · pthreads · mutex</span>
+    <span class="spacer"></span>
+    <a class="btn" href="https://github.com/Unde21/Philosophers" target="_blank" rel="noopener">Code sur GitHub</a>
+  </div>
+</header>
+
+<main class="wrap play">
+  <form class="params" id="params" novalidate>
+    <div class="field">
+      <label class="label" for="n">Philosophes</label>
+      <input id="n" type="number" min="1" max="200" value="5" required>
+    </div>
+    <div class="field">
+      <label class="label" for="die">time_to_die</label>
+      <input id="die" type="number" min="60" value="800" required>
+    </div>
+    <div class="field">
+      <label class="label" for="eat">time_to_eat</label>
+      <input id="eat" type="number" min="60" value="200" required>
+    </div>
+    <div class="field">
+      <label class="label" for="sleep">time_to_sleep</label>
+      <input id="sleep" type="number" min="60" value="200" required>
+    </div>
+    <div class="field">
+      <label class="label" for="meals">Repas (optionnel)</label>
+      <input id="meals" type="number" min="1" placeholder="—">
+    </div>
+    <span class="spacer" style="flex:1"></span>
+    <button class="btn primary" id="run" type="submit">Lancer</button>
+    <button class="btn" id="stop" type="button" disabled>Arrêter</button>
+  </form>
+  <div class="presets" id="presets" aria-label="Exemples">
+    <button class="chip" type="button" data-args="4 410 200 200">Personne ne meurt <b>4 410 200 200</b></button>
+    <button class="chip" type="button" data-args="4 310 200 100">Un philosophe meurt <b>4 310 200 100</b></button>
+    <button class="chip" type="button" data-args="5 800 200 200 7">Fin après 7 repas <b>5 800 200 200 7</b></button>
+    <button class="chip" type="button" data-args="1 800 200 200">Seul avec une fourchette <b>1 800 200 200</b></button>
+    <button class="chip" type="button" data-args="200 410 200 200">200 philosophes <b>200 410 200 200</b></button>
+  </div>
+  <p class="cmd" id="cmd"></p>
+
+  <div class="sim">
+    <div class="stage" id="stage">
+      <canvas id="table" width="1000" height="1000" aria-label="Table des philosophes"></canvas>
+    </div>
+    <div class="side">
+      <dl class="stats">
+        <div><dt>Temps</dt><dd id="s-time">0 ms</dd></div>
+        <div><dt>État</dt><dd id="s-state">Prêt</dd></div>
+        <div><dt>Repas servis</dt><dd id="s-meals">0</dd></div>
+        <div><dt>Repas min. / philo</dt><dd id="s-min">0</dd></div>
+      </dl>
+      <ul class="legend">
+        <li><i style="background:var(--think)"></i>pense</li>
+        <li><i style="background:var(--fork)"></i>a une fourchette</li>
+        <li><i style="background:var(--eat)"></i>mange</li>
+        <li><i style="background:var(--sleep)"></i>dort</li>
+        <li><i style="background:var(--dead)"></i>mort</li>
+      </ul>
+      <pre class="log" id="log"></pre>
+    </div>
+  </div>
+
+  <div class="about">
+    <section>
+      <h3>Le problème</h3>
+      <p>Des philosophes sont assis autour d’une table, une fourchette entre chaque assiette. Pour manger, il faut les deux fourchettes voisines. Chaque philosophe est un thread, chaque fourchette est protégée par un mutex, et personne ne doit mourir de faim plus de <code>time_to_die</code> ms après son dernier repas.</p>
+    </section>
+    <section>
+      <h3>Ce que tu vois</h3>
+      <p>Le programme tourne vraiment : la table est dessinée à partir de ce qu’il affiche (« 200 3 is eating »). Les fourchettes se déplacent vers le philosophe qui les prend, dans l’ordre choisi par le code pour éviter l’interblocage : les philosophes pairs et impairs ne commencent pas par la même.</p>
+    </section>
+    <section>
+      <h3>Sous le capot</h3>
+      <p>Le code C est compilé tel quel en WebAssembly et s’exécute dans un Web Worker. Les pthreads y deviennent des fibres coopératives : chaque <code>usleep()</code> ou mutex occupé passe la main au philosophe suivant, avec la vraie horloge.</p>
+    </section>
+  </div>
+</main>
+
+<script>
+(function () {
+  'use strict';
+  const $ = (id) => document.getElementById(id);
+  const canvas = $('table');
+  const ctx = canvas.getContext('2d');
+  const logBox = $('log');
+  const fields = ['n', 'die', 'eat', 'sleep', 'meals'].map($);
+  let worker = null;
+  let sim = null;
+
+  const css = getComputedStyle(document.documentElement);
+  const color = (v) => css.getPropertyValue(v).trim();
+  const STATE = { think: '--think', fork: '--fork', eat: '--eat', sleep: '--sleep', dead: '--dead' };
+
+  function args() {
+    const a = fields.slice(0, 4).map((f) => f.value.trim());
+    if (fields[4].value.trim()) a.push(fields[4].value.trim());
+    return a;
+  }
+  function showCmd() {
+    $('cmd').innerHTML = '$ <b>./philo ' + args().join(' ') + '</b>';
+  }
+  fields.forEach((f) => f.addEventListener('input', showCmd));
+  document.querySelectorAll('#presets .chip').forEach((b) => b.addEventListener('click', () => {
+    const v = b.dataset.args.split(' ');
+    fields.forEach((f, i) => { f.value = v[i] || ''; });
+    showCmd();
+    start();
+  }));
+
+  function newSim(n) {
+    const philos = Array.from({ length: n }, () => ({ state: 'think', forks: 0, meals: 0 }));
+    return { n, philos, forkHolder: new Array(n).fill(-1), time: 0, status: 'run', lines: [], dead: -1, meals: 0 };
+  }
+
+  // Fork order from srcs/action.c: philosopher id (0-based) takes fork id
+  // first when id is even, fork id+1 first when id is odd.
+  function forkOrder(id, n) {
+    const a = id, b = (id + 1) % n;
+    return id % 2 === 0 ? [a, b] : [b, a];
+  }
+
+  function apply(line) {
+    const m = /^(\d+) (\d+) (.+)$/.exec(line);
+    if (!m || !sim) return;
+    const t = +m[1], id = +m[2] - 1, msg = m[3];
+    if (id < 0 || id >= sim.n) return;
+    const p = sim.philos[id];
+    sim.time = Math.max(sim.time, t);
+    if (msg === 'has taken a fork') {
+      const order = forkOrder(id, sim.n);
+      const f = order[Math.min(p.forks, 1)];
+      sim.forkHolder[f] = id;
+      p.forks++;
+      p.state = 'fork';
+    } else if (msg === 'is eating') {
+      p.state = 'eat'; p.meals++; sim.meals++;
+    } else if (msg === 'is sleeping') {
+      p.state = 'sleep'; p.forks = 0;
+      for (let f = 0; f < sim.n; f++) if (sim.forkHolder[f] === id) sim.forkHolder[f] = -1;
+    } else if (msg === 'is thinking') {
+      p.state = 'think';
+    } else if (msg === 'died') {
+      p.state = 'dead'; sim.status = 'dead'; sim.dead = id;
+    }
+  }
+
+  function draw() {
+    const W = canvas.width, H = canvas.height, cx = W / 2, cy = H / 2;
+    ctx.clearRect(0, 0, W, H);
+    ctx.fillStyle = color('--stage'); ctx.fillRect(0, 0, W, H);
+    const n = sim ? sim.n : +fields[0].value || 5;
+    const R = W * 0.31;
+    // table
+    ctx.beginPath(); ctx.arc(cx, cy, R * 1.05, 0, Math.PI * 2);
+    ctx.fillStyle = '#3a2b1f'; ctx.fill();
+    ctx.lineWidth = 6; ctx.strokeStyle = '#5a4330'; ctx.stroke();
+    const plate = Math.max(6, Math.min(60, (Math.PI * R) / n * 0.75));
+    const ang = (i) => -Math.PI / 2 + (i * 2 * Math.PI) / n;
+    // forks: fork j sits between philosopher j-1 and j (philosopher i uses forks i and i+1)
+    for (let j = 0; j < n; j++) {
+      const holder = sim ? sim.forkHolder[j] : -1;
+      let a = n === 1 ? ang(0) + 0.6 : ang(j) - Math.PI / n;
+      let r = R * 0.98;
+      if (holder >= 0) { a = ang(holder) + (j === holder ? -1 : 1) * Math.min(0.25, Math.PI / n * 0.45); r = R * 0.86; }
+      const len = Math.max(8, Math.min(42, plate * 0.9));
+      const x = cx + Math.cos(a) * r, y = cy + Math.sin(a) * r;
+      ctx.save(); ctx.translate(x, y); ctx.rotate(a);
+      ctx.strokeStyle = holder >= 0 ? color('--fork') : '#c9c2b8';
+      ctx.lineWidth = Math.max(2, plate * 0.1); ctx.lineCap = 'round';
+      ctx.beginPath(); ctx.moveTo(-len / 2, 0); ctx.lineTo(len / 2, 0); ctx.stroke();
+      ctx.restore();
+    }
+    // philosophers
+    for (let i = 0; i < n; i++) {
+      const p = sim ? sim.philos[i] : { state: 'think', meals: 0 };
+      const a = ang(i), x = cx + Math.cos(a) * R * 1.22, y = cy + Math.sin(a) * R * 1.22;
+      ctx.beginPath(); ctx.arc(x, y, plate / 2, 0, Math.PI * 2);
+      ctx.fillStyle = color(STATE[p.state]); ctx.fill();
+      if (p.state === 'dead') {
+        ctx.strokeStyle = '#fff'; ctx.lineWidth = Math.max(2, plate * 0.08);
+        const d = plate * 0.22;
+        ctx.beginPath(); ctx.moveTo(x - d, y - d); ctx.lineTo(x + d, y + d); ctx.moveTo(x + d, y - d); ctx.lineTo(x - d, y + d); ctx.stroke();
+      }
+      if (n <= 60) {
+        ctx.fillStyle = '#0b0f0e';
+        ctx.font = '600 ' + Math.round(plate * 0.38) + 'px "Martian Mono", monospace';
+        ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        if (p.state !== 'dead') ctx.fillText(String(i + 1), x, y + 1);
+        if (n <= 20) {
+          ctx.fillStyle = color('--stage-ink');
+          ctx.font = '500 18px "Martian Mono", monospace';
+          const off = R * 1.22 + plate * 0.5 + 14, c = Math.cos(a);
+          const ox = cx + c * off, oy = cy + Math.sin(a) * (off + 8);
+          ctx.textAlign = c > 0.35 ? 'left' : c < -0.35 ? 'right' : 'center';
+          ctx.fillText(p.meals + ' repas', ox, oy);
+        }
+      }
+    }
+    // centre caption
+    ctx.fillStyle = color('--stage-ink'); ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.font = '700 64px "Big Shoulders Display", sans-serif';
+    ctx.fillText(sim ? sim.time + ' ms' : './philo', cx, cy - 10);
+    ctx.font = '500 20px "Martian Mono", monospace';
+    ctx.globalAlpha = 0.7;
+    ctx.fillText(sim ? (sim.status === 'dead' ? 'philosophe ' + (sim.dead + 1) + ' est mort' : sim.status === 'done' ? 'simulation terminée' : n + ' philosophes') : 'choisis des paramètres', cx, cy + 44);
+    ctx.globalAlpha = 1;
+  }
+
+  let pendingLog = [];
+  function frame() {
+    if (sim) {
+      $('s-time').textContent = sim.time + ' ms';
+      $('s-meals').textContent = String(sim.meals);
+      $('s-min').textContent = String(sim.philos.reduce((m, p) => Math.min(m, p.meals), Infinity));
+      const st = $('s-state');
+      st.className = sim.status === 'dead' ? 'state-dead' : sim.status === 'done' ? 'state-done' : '';
+      st.textContent = { run: 'En cours', dead: 'Mort', done: 'Terminé', error: 'Erreur', stopped: 'Arrêté' }[sim.status];
+      if (pendingLog.length) {
+        sim.lines.push(...pendingLog); pendingLog = [];
+        if (sim.lines.length > 400) sim.lines.splice(0, sim.lines.length - 400);
+        logBox.textContent = sim.lines.join('\n');
+        logBox.scrollTop = logBox.scrollHeight;
+      }
+    }
+    draw();
+    requestAnimationFrame(frame);
+  }
+
+  function stop(status) {
+    if (worker) { worker.terminate(); worker = null; }
+    $('stop').disabled = true; $('run').disabled = false;
+    if (sim && sim.status === 'run') sim.status = status || 'stopped';
+  }
+
+  let partial = '';
+  function start() {
+    stop();
+    const a = args();
+    const n = Math.max(1, Math.min(200, parseInt(a[0], 10) || 1));
+    sim = newSim(n);
+    partial = ''; pendingLog = []; logBox.textContent = '';
+    worker = new Worker('games/mlxweb/wasi-worker.js');
+    worker.onmessage = (e) => {
+      const m = e.data;
+      if (m.cmd === 'out') {
+        const parts = (partial + m.text).split('\n');
+        partial = parts.pop();
+        for (const l of parts) { apply(l); pendingLog.push(l); }
+      } else if (m.cmd === 'exit') {
+        if (partial) { apply(partial); pendingLog.push(partial); partial = ''; }
+        if (sim.status === 'run') sim.status = m.code === 0 ? 'done' : 'error';
+        stop();
+      } else if (m.cmd === 'error') {
+        pendingLog.push('erreur : ' + m.message.split('\n')[0]);
+        sim.status = 'error'; stop();
+      }
+    };
+    worker.postMessage({ cmd: 'run', wasm: new URL('games/philosophers/philo.wasm', location.href).href, args: a });
+    $('stop').disabled = false;
+  }
+
+  $('params').addEventListener('submit', (e) => { e.preventDefault(); start(); });
+  $('stop').addEventListener('click', () => stop('stopped'));
+  showCmd();
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>

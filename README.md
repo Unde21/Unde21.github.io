@@ -4,6 +4,7 @@ Site statique (GitHub Pages) qui présente mes projets 42 et les rend jouables d
 
 - `index.html` : page d'accueil
 - `so_long.html`, `cub3d.html` : pages de jeu
+- `philosophers.html` : simulation du dîner des philosophes (programme lancé dans un Web Worker par `games/mlxweb/wasi-worker.js`)
 - `games/` : programmes compilés en WebAssembly + leurs fichiers (cartes, textures, sons)
 - `coi-serviceworker.js` : active l'isolation cross-origin sur GitHub Pages (nécessaire aux threads de Cub3D bonus)
 - `tools/mlxweb/` : la couche de portage (MiniLibX pour canvas, runtime WASI, threads, sons) et les scripts de build

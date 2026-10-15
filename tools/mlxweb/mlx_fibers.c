@@ -17,10 +17,12 @@
 
 __attribute__((import_module("mlxweb"), import_name("fiber_switch")))
 void	js_fiber_switch(void);
+__attribute__((import_module("mlxweb"), import_name("now")))
+double	js_now(void);
 
-#define MAX_FIBERS 64
-#define FIBER_STACK (1024 * 1024)
-#define FIBER_ABUF (128 * 1024)
+#define MAX_FIBERS 260
+#define FIBER_STACK (256 * 1024)
+#define FIBER_ABUF (64 * 1024)
 
 enum { F_FREE, F_NEW, F_READY, F_DONE };
 
@@ -33,6 +35,7 @@ typedef struct s_fiber
 	uint8_t		*stack;
 	uint8_t		*abuf;
 	uint32_t	sp;
+	double		wake;
 }	t_fiber;
 
 static t_fiber	g_f[MAX_FIBERS];
@@ -78,20 +81,43 @@ uint32_t	mlxweb_fiber_stack_top(int i)
 	return ((uint32_t)(uintptr_t)(g_f[i].stack + FIBER_STACK) & ~15u);
 }
 
-/* Next fiber to run after the current one blocked or finished. */
+static int	runnable(int i, double now)
+{
+	if (i != 0 && g_f[i].state != F_NEW && g_f[i].state != F_READY)
+		return (0);
+	return (g_f[i].wake <= now);
+}
+
+/* Next fiber to run after the current one blocked or finished, or -1 when
+** every live fiber is asleep (JS then waits until mlxweb_fiber_wake_min()). */
 __attribute__((export_name("mlxweb_fiber_next")))
 int	mlxweb_fiber_next(void)
 {
-	int	k;
-	int	i;
+	int		k;
+	int		i;
+	double	now;
 
+	now = js_now();
 	for (k = 1; k <= g_nf; k++)
 	{
 		i = (g_cur + k) % g_nf;
-		if (i == 0 || g_f[i].state == F_NEW || g_f[i].state == F_READY)
+		if (runnable(i, now))
 			return (i);
 	}
-	return (0);
+	return (-1);
+}
+
+__attribute__((export_name("mlxweb_fiber_wake_min")))
+double	mlxweb_fiber_wake_min(void)
+{
+	int		i;
+	double	m;
+
+	m = g_f[0].wake;
+	for (i = 1; i < g_nf; i++)
+		if ((g_f[i].state == F_NEW || g_f[i].state == F_READY) && g_f[i].wake < m)
+			m = g_f[i].wake;
+	return (m);
 }
 
 /* Entry of every non-main fiber (called by JS on a fresh stack). */
@@ -109,6 +135,19 @@ void	mlxweb_fiber_start(int i)
 static void	block(void)
 {
 	js_fiber_switch();
+}
+
+/* usleep() lets the other fibers run until this one's wake-up time. */
+int	usleep(unsigned int us)
+{
+	double	wake;
+
+	wake = js_now() + us / 1000.0;
+	g_f[g_cur].wake = wake;
+	while (js_now() < wake)
+		block();
+	g_f[g_cur].wake = 0;
+	return (0);
 }
 
 /* ------------------------------------------------ pthreads */

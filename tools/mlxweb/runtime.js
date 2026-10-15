@@ -628,6 +628,15 @@
       if (opts.onExit) opts.onExit(code, error);
       resolveDone(finished);
     }
+    // Every fiber asleep (usleep): wait for the earliest wake-up time.
+    function nextFiber() {
+      for (;;) {
+        const n = ex.mlxweb_fiber_next();
+        if (n >= 0) return n;
+        const until = Math.min(ex.mlxweb_fiber_wake_min(), performance.now() + 50);
+        while (performance.now() < until) { /* short sleep */ }
+      }
+    }
     function rewind(i) {
       if (sp && savedSp.has(i)) sp.value = savedSp.get(i);
       ex.asyncify_start_rewind(abufOf(i));
@@ -665,11 +674,11 @@
             return;
           }
           if (++switches > 2000000) return finish(-1, new Error('Interblocage entre threads (deadlock).'));
-          i = ex.mlxweb_fiber_next();
+          i = nextFiber();
           continue;
         }
         if (i === 0) return finish(0);
-        i = ex.mlxweb_fiber_next();
+        i = nextFiber();
       }
     }
     run(0);

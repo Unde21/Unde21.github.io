@@ -22,4 +22,8 @@ FB=$(pm FILES_BONUS | tr ' ' '\n' | grep -v "srcs_bonus/game/sound/init.c" | sed
 case "$FB" in *init_utils.c*) ;; *) echo "utils.c not found in FILES_BONUS" >&2; exit 1;; esac
 THREADS=1 $M/build.sh $S/cub3d/cub3d_bonus.wasm "${CF[@]}" -Iincludes/header_bonus -- $FB $M/ports/cub3d/sound_init_web.c $LIBS
 FIBERS=1 $M/build.sh $S/cub3d/cub3d_bonus_st.wasm "${CF[@]}" -Iincludes/header_bonus -- $FB $M/ports/cub3d/sound_init_web.c $LIBS
+
+cd ~/work/Philosophers/philo
+FIBERS=1 $M/build.sh $S/philosophers/philo.wasm -Iincludes -- srcs/*.c
+
 cp $M/runtime.js $M/runtime-worker.js $S/mlxweb/
