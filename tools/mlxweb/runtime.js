@@ -60,6 +60,13 @@
               if (i >= urls.length) { c.close(); return; }
               const r = await fetch(urls[i++]);
               if (!r.ok) throw new Error('assets data ' + r.status);
+              if (index.b64) {
+                const bin = atob((await r.text()).trim());
+                const bytes = new Uint8Array(bin.length);
+                for (let k = 0; k < bin.length; k++) bytes[k] = bin.charCodeAt(k);
+                c.enqueue(bytes);
+                return;
+              }
               reader = r.body.getReader();
             }
             const { done, value } = await reader.read();
@@ -72,7 +79,7 @@
       resp = await fetch(base + (index.b64 ? '.pak.txt' : index.gzip ? '.pak' : '.bin'));
     }
     if (!resp.ok) throw new Error('assets data ' + resp.status);
-    if (index.b64) {
+    if (index.b64 && !index.parts) {
       // Hosts that only serve text: the gzip pack is shipped as base64.
       const bin = atob((await resp.text()).trim());
       const bytes = new Uint8Array(bin.length);
@@ -342,6 +349,7 @@
     });
 
     // ---------- events
+    let running = true;
     const queue = [];
     let autorepeat = true;
     const mouseMode = opts.mouse || 'absolute';
@@ -500,18 +508,8 @@
         const s = sounds.get(pid);
         if (s) { s.a.pause(); s.alive = false; sounds.delete(pid); }
       },
-      yield() {
-        if (state === 'rewinding') {
-          ex.asyncify_stop_rewind();
-          state = 'normal';
-          return;
-        }
-        const v = dv();
-        v.setInt32(asyncBuf, asyncBuf + 8, true);
-        v.setInt32(asyncBuf + 4, asyncBuf + asyncSize, true);
-        ex.asyncify_start_unwind(asyncBuf);
-        state = 'unwinding';
-      },
+      yield() { unwind('frame'); },
+      fiber_switch() { unwind('block'); },
     };
 
     const module = await WebAssembly.compile(wasmBytes);
@@ -535,7 +533,30 @@
     }
 
     let state = 'normal';
-    let running = true;
+    let reason = '';
+    // Fibers: pthreads emulated on one core (see mlx_fibers.c). Fiber 0 is main.
+    const fibered = typeof ex.mlxweb_fiber_start === 'function';
+    const sp = ex.__stack_pointer || null;
+    const savedSp = new Map();
+    let curFiber = 0;
+    let mainStarted = false;
+    let switches = 0;
+    function abufOf(i) { return fibered ? ex.mlxweb_fiber_abuf(i) : asyncBuf; }
+    function unwind(kind) {
+      if (state === 'rewinding') {
+        ex.asyncify_stop_rewind();
+        state = 'normal';
+        return;
+      }
+      const buf = abufOf(curFiber);
+      const size = fibered ? ex.mlxweb_fiber_abuf_size(curFiber) : asyncSize;
+      const v = dv();
+      v.setInt32(buf, buf + 8, true);
+      v.setInt32(buf + 4, buf + size, true);
+      ex.asyncify_start_unwind(buf);
+      state = 'unwinding';
+      reason = kind;
+    }
     let rafId = 0;
     let finished = null;
     let resolveDone;
@@ -565,29 +586,51 @@
       if (opts.onExit) opts.onExit(code, error);
       resolveDone(finished);
     }
-    function step() {
-      if (!running) return;
-      try {
-        ex._start();
-      } catch (e) {
-        if (e instanceof ExitStatus) return finish(e.code);
-        console.error(e);
-        return finish(-1, e);
-      }
-      if (state === 'unwinding') {
-        ex.asyncify_stop_unwind();
-        state = 'normal';
-        rafId = requestAnimationFrame(() => {
-          if (!running) return;
-          ex.asyncify_start_rewind(asyncBuf);
-          state = 'rewinding';
-          step();
-        });
-      } else {
-        finish(0);
+    function rewind(i) {
+      if (sp && savedSp.has(i)) sp.value = savedSp.get(i);
+      ex.asyncify_start_rewind(abufOf(i));
+      state = 'rewinding';
+    }
+    function run(i) {
+      for (;;) {
+        if (!running) return;
+        curFiber = i;
+        if (fibered) ex.mlxweb_fiber_set(i);
+        try {
+          if (i === 0) {
+            if (mainStarted) rewind(0);
+            mainStarted = true;
+            ex._start();
+          } else if (ex.mlxweb_fiber_state(i) === 1) {
+            sp.value = ex.mlxweb_fiber_stack_top(i);
+            ex.mlxweb_fiber_start(i);
+          } else {
+            rewind(i);
+            ex.mlxweb_fiber_start(i);
+          }
+        } catch (e) {
+          if (e instanceof ExitStatus) return finish(e.code);
+          console.error(e);
+          return finish(-1, e);
+        }
+        if (state === 'unwinding') {
+          ex.asyncify_stop_unwind();
+          state = 'normal';
+          if (sp) savedSp.set(i, sp.value);
+          if (reason === 'frame') {
+            switches = 0;
+            rafId = requestAnimationFrame(() => run(0));
+            return;
+          }
+          if (++switches > 2000000) return finish(-1, new Error('Interblocage entre threads (deadlock).'));
+          i = ex.mlxweb_fiber_next();
+          continue;
+        }
+        if (i === 0) return finish(0);
+        i = ex.mlxweb_fiber_next();
       }
     }
-    step();
+    run(0);
 
     return {
       done,

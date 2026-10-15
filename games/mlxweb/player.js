@@ -26,6 +26,9 @@
     let game = null;
     let muted = false;
     const isolated = !!self.crossOriginIsolated;
+    // A threaded build needs SharedArrayBuffer; otherwise use its single-core
+    // build (pthreads emulated as fibers) when the page provides one.
+    const usable = (v) => !v.threads || isolated || !!v.singleCoreWasm;
 
     // variants (e.g. Cub3D bonus needs threads -> cross-origin isolation)
     const variants = cfg.variants;
@@ -33,11 +36,11 @@
       variants.forEach((v, i) => {
         const o = document.createElement('option');
         o.value = String(i);
-        o.textContent = v.label + (v.threads && !isolated ? ' (indisponible ici)' : '');
-        o.disabled = !!(v.threads && !isolated);
+        o.textContent = v.label + (usable(v) ? '' : ' (indisponible ici)');
+        o.disabled = !usable(v);
         variantSel.appendChild(o);
       });
-      const firstOk = variants.findIndex((v) => !v.threads || isolated);
+      const firstOk = variants.findIndex(usable);
       variantSel.value = String(firstOk);
       variantSel.addEventListener('change', () => { fillMaps(); stop(); showStart(); });
     }
@@ -72,7 +75,7 @@
     }
     function showStart() {
       const v = variant();
-      if (v.threads && !isolated) {
+      if (!usable(v)) {
         setOverlay('error', 'Version indisponible ici', 'Cette version utilise des threads, qui demandent une page isolée (COOP/COEP). Elle fonctionne sur le site publié.', '');
         return;
       }
@@ -99,14 +102,14 @@
       try {
         game = await MlxWeb.start({
           canvas,
-          wasm: v.wasm,
+          wasm: v.threads && !isolated ? v.singleCoreWasm : v.wasm,
           assets: v.assets,
           program: v.program,
           args: [mapSel.value],
           loopRate: v.loopRate,
           budgetMs: v.budgetMs || 10,
           mouse: v.mouse || 'absolute',
-          threads: v.threads || 0,
+          threads: isolated ? v.threads || 0 : 0,
           workerUrl: cfg.workerUrl || 'games/mlxweb/runtime-worker.js',
           soundBase: v.soundBase || '',
           muted,

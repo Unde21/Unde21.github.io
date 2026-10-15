@@ -24,7 +24,13 @@ if [[ "${THREADS:-0}" == 1 ]]; then
   EXTRA_SRC+=("$HERE/mlx_threads.c")
   LDFLAGS+=(-pthread -Wl,--import-memory -Wl,--export-memory -Wl,--shared-memory
     -Wl,--initial-memory=$((64*1024*1024)) -Wl,--max-memory=$((2048*1024*1024)))
+elif [[ "${FIBERS:-0}" == 1 ]]; then
+  CFLAGS+=(-D_WASI_EMULATED_PTHREAD)
+  EXTRA_SRC+=("$HERE/mlx_fibers.c")
+  LDFLAGS+=(-Wl,--export=__stack_pointer)
 fi
+ASYNC=(--pass-arg=asyncify-imports@mlxweb.yield,mlxweb.fiber_switch)
+[[ "${FIBERS:-0}" == 1 ]] || ASYNC+=(--pass-arg=asyncify-ignore-indirect)
 COMMON=(--target=$TARGET --sysroot="$SYSROOT" -O2 -I"$HERE/include"
   -D_WASI_EMULATED_SIGNAL -D_WASI_EMULATED_PROCESS_CLOCKS -D_WASI_EMULATED_GETPID
   -Wno-implicit-function-declaration -Wno-int-conversion -Wno-incompatible-pointer-types
@@ -34,9 +40,6 @@ COMMON=(--target=$TARGET --sysroot="$SYSROOT" -O2 -I"$HERE/include"
   -lwasi-emulated-signal -lwasi-emulated-process-clocks -lwasi-emulated-getpid -lm \
   "${LDFLAGS[@]}" -o "$TMP/raw.wasm"
 
-$WASMOPT "$TMP/raw.wasm" -O2 --asyncify \
-  --pass-arg=asyncify-imports@mlxweb.yield \
-  --pass-arg=asyncify-ignore-indirect \
-  -o "$OUT"
+$WASMOPT "$TMP/raw.wasm" -O2 --asyncify "${ASYNC[@]}" -o "$OUT"
 rm -rf "$TMP"
 ls -la "$OUT"
