@@ -14,13 +14,21 @@
 #include <string.h>
 #include <errno.h>
 #include <pthread.h>
+#include <semaphore.h>
+#include <stdarg.h>
+#include <fcntl.h>
+#include <sys/types.h>
+
+#undef exit
 
 __attribute__((import_module("mlxweb"), import_name("fiber_switch")))
 void	js_fiber_switch(void);
+__attribute__((import_module("mlxweb"), import_name("now")))
+double	js_now(void);
 
-#define MAX_FIBERS 64
-#define FIBER_STACK (1024 * 1024)
-#define FIBER_ABUF (128 * 1024)
+#define MAX_FIBERS 260
+#define FIBER_STACK (256 * 1024)
+#define FIBER_ABUF (64 * 1024)
 
 enum { F_FREE, F_NEW, F_READY, F_DONE };
 
@@ -33,6 +41,9 @@ typedef struct s_fiber
 	uint8_t		*stack;
 	uint8_t		*abuf;
 	uint32_t	sp;
+	double		wake;
+	int			pid;
+	int			reaped;
 }	t_fiber;
 
 static t_fiber	g_f[MAX_FIBERS];
@@ -78,20 +89,43 @@ uint32_t	mlxweb_fiber_stack_top(int i)
 	return ((uint32_t)(uintptr_t)(g_f[i].stack + FIBER_STACK) & ~15u);
 }
 
-/* Next fiber to run after the current one blocked or finished. */
+static int	runnable(int i, double now)
+{
+	if (i != 0 && g_f[i].state != F_NEW && g_f[i].state != F_READY)
+		return (0);
+	return (g_f[i].wake <= now);
+}
+
+/* Next fiber to run after the current one blocked or finished, or -1 when
+** every live fiber is asleep (JS then waits until mlxweb_fiber_wake_min()). */
 __attribute__((export_name("mlxweb_fiber_next")))
 int	mlxweb_fiber_next(void)
 {
-	int	k;
-	int	i;
+	int		k;
+	int		i;
+	double	now;
 
+	now = js_now();
 	for (k = 1; k <= g_nf; k++)
 	{
 		i = (g_cur + k) % g_nf;
-		if (i == 0 || g_f[i].state == F_NEW || g_f[i].state == F_READY)
+		if (runnable(i, now))
 			return (i);
 	}
-	return (0);
+	return (-1);
+}
+
+__attribute__((export_name("mlxweb_fiber_wake_min")))
+double	mlxweb_fiber_wake_min(void)
+{
+	int		i;
+	double	m;
+
+	m = g_f[0].wake;
+	for (i = 1; i < g_nf; i++)
+		if ((g_f[i].state == F_NEW || g_f[i].state == F_READY) && g_f[i].wake < m)
+			m = g_f[i].wake;
+	return (m);
 }
 
 /* Entry of every non-main fiber (called by JS on a fresh stack). */
@@ -109,6 +143,257 @@ void	mlxweb_fiber_start(int i)
 static void	block(void)
 {
 	js_fiber_switch();
+}
+
+/* ------------------------------------------------ processes
+** A "process" is a group of fibers sharing a pid (main program: 1). The
+** program's memory is shared, which suits 42 projects where each child
+** only uses its own slot of the parent's data before being killed.
+*/
+
+#define MAIN_PID 1
+
+static int	g_next_pid = 100;
+
+static int	pid_of(int i)
+{
+	return (g_f[i].pid ? g_f[i].pid : MAIN_PID);
+}
+
+static int	process_alive(int pid)
+{
+	int	i;
+
+	for (i = 1; i < g_nf; i++)
+		if (g_f[i].pid == pid && g_f[i].state != F_DONE)
+			return (1);
+	return (0);
+}
+
+static void	end_process(int pid)
+{
+	int	i;
+
+	for (i = 1; i < g_nf; i++)
+		if (g_f[i].pid == pid)
+			g_f[i].state = F_DONE;
+}
+
+/* fork() replacement: run fn(arg) as the main thread of a new process. */
+pid_t	mlxweb_spawn(void *(*fn)(void *), void *arg)
+{
+	pthread_t	th;
+	int			i;
+
+	if (pthread_create(&th, NULL, fn, arg) != 0)
+		return (-1);
+	i = (int)th - 1;
+	g_f[i].pid = g_next_pid++;
+	return (g_f[i].pid);
+}
+
+/* exit() for the fiber build (-Dexit=mlxweb_exit): ends only the calling
+** process; the main process really exits. */
+void	mlxweb_exit(int code)
+{
+	int	pid;
+
+	pid = pid_of(g_cur);
+	if (pid == MAIN_PID)
+		exit(code);
+	end_process(pid);
+	for (;;)
+		js_fiber_switch();
+}
+
+extern int		mlxweb_sound_kill(pid_t pid, int sig);
+extern pid_t	mlxweb_sound_waitpid(pid_t pid, int *status, int options);
+
+int	kill(pid_t pid, int sig)
+{
+	int	i;
+
+	for (i = 1; i < g_nf; i++)
+		if (g_f[i].pid == pid)
+		{
+			end_process(pid);
+			if (pid_of(g_cur) == pid)
+				for (;;)
+					js_fiber_switch();
+			return (0);
+		}
+	return (mlxweb_sound_kill(pid, sig));
+}
+
+static int	is_process(int pid)
+{
+	int	i;
+
+	for (i = 1; i < g_nf; i++)
+		if (g_f[i].pid == pid)
+			return (1);
+	return (0);
+}
+
+static void	reap(int pid)
+{
+	int	i;
+
+	for (i = 1; i < g_nf; i++)
+		if (g_f[i].pid == pid)
+			g_f[i].reaped = 1;
+}
+
+pid_t	waitpid(pid_t pid, int *status, int options)
+{
+	if (status)
+		*status = 0;
+	if (pid > 0 && !is_process(pid))
+		return (mlxweb_sound_waitpid(pid, status, options));
+	for (;;)
+	{
+		for (int i = 1; i < g_nf; i++)
+		{
+			int	p = g_f[i].pid;
+
+			if (p && p != MAIN_PID && !g_f[i].reaped && (pid <= 0 || p == pid)
+				&& !process_alive(p))
+				return (reap(p), p);
+		}
+		if (options & 1)
+			return (0);
+		{
+			int	any = 0;
+
+			for (int i = 1; i < g_nf; i++)
+				if (g_f[i].pid && g_f[i].pid != MAIN_PID && !g_f[i].reaped
+					&& (pid <= 0 || g_f[i].pid == pid))
+					any = 1;
+			if (!any)
+				return (-1);
+		}
+		block();
+	}
+}
+
+pid_t	wait(int *status)
+{
+	return (waitpid(-1, status, 0));
+}
+
+/* ------------------------------------------------ named semaphores */
+typedef struct s_sem
+{
+	char	name[64];
+	int		value;
+	int		linked;
+}	t_sem;
+
+#define MAX_SEMS 32
+
+static t_sem	*g_sems[MAX_SEMS];
+
+sem_t	*sem_open(const char *name, int oflag, ...)
+{
+	va_list		ap;
+	unsigned	value;
+	int			i;
+	t_sem		*s;
+
+	for (i = 0; i < MAX_SEMS; i++)
+		if (g_sems[i] && g_sems[i]->linked && !strcmp(g_sems[i]->name, name))
+		{
+			if ((oflag & O_CREAT) && (oflag & O_EXCL))
+				return (SEM_FAILED);
+			return ((sem_t *)g_sems[i]);
+		}
+	if (!(oflag & O_CREAT))
+		return (SEM_FAILED);
+	va_start(ap, oflag);
+	(void)va_arg(ap, int);
+	value = va_arg(ap, unsigned);
+	va_end(ap);
+	s = calloc(1, sizeof(t_sem));
+	if (!s)
+		return (SEM_FAILED);
+	strncpy(s->name, name, sizeof(s->name) - 1);
+	s->value = (int)value;
+	s->linked = 1;
+	for (i = 0; i < MAX_SEMS; i++)
+		if (!g_sems[i] || !g_sems[i]->linked)
+		{
+			g_sems[i] = s;
+			return ((sem_t *)s);
+		}
+	free(s);
+	return (SEM_FAILED);
+}
+
+int	sem_unlink(const char *name)
+{
+	for (int i = 0; i < MAX_SEMS; i++)
+		if (g_sems[i] && g_sems[i]->linked && !strcmp(g_sems[i]->name, name))
+		{
+			g_sems[i]->linked = 0;
+			return (0);
+		}
+	return (-1);
+}
+
+int	sem_close(sem_t *sem)
+{
+	(void)sem;
+	return (0);
+}
+
+/* Every sem_wait() is also a scheduling point, so busy loops that only
+** take and release semaphores (supervisors) still let the others run. */
+int	sem_wait(sem_t *sem)
+{
+	t_sem	*s;
+
+	s = (t_sem *)sem;
+	block();
+	while (s->value <= 0)
+		block();
+	s->value--;
+	return (0);
+}
+
+int	sem_trywait(sem_t *sem)
+{
+	t_sem	*s;
+
+	s = (t_sem *)sem;
+	if (s->value <= 0)
+		return (errno = EAGAIN, -1);
+	s->value--;
+	return (0);
+}
+
+int	sem_post(sem_t *sem)
+{
+	((t_sem *)sem)->value++;
+	return (0);
+}
+
+int	sem_getvalue(sem_t *restrict sem, int *restrict v)
+{
+	*v = ((t_sem *)sem)->value;
+	return (0);
+}
+
+/* usleep() lets the other fibers run until this one's wake-up time. */
+int	usleep(unsigned int us)
+{
+	double	wake;
+
+	wake = js_now() + us / 1000.0;
+	g_f[g_cur].wake = wake;
+	while (js_now() < wake)
+		block();
+	g_f[g_cur].wake = 0;
+	return (0);
 }
 
 /* ------------------------------------------------ pthreads */
@@ -130,6 +415,7 @@ int	pthread_create(pthread_t *th, const pthread_attr_t *attr,
 	f->fn = fn;
 	f->arg = arg;
 	f->state = F_NEW;
+	f->pid = pid_of(g_cur);
 	*th = (pthread_t)(g_nf + 1);
 	g_nf++;
 	return (0);
