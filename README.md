@@ -6,6 +6,7 @@ A static site (GitHub Pages) that presents my 42 projects and makes them playabl
 - `so_long.html`, `cub3d.html`: game pages
 - `minishell.html`: web terminal (xterm.js) running the real minishell
 - `webserv.html`: the real webserv running in the page, with a browser frame, a request log and a raw HTTP console
+- `inception.html`: interactive diagram of the Docker infrastructure, driven by the project's own files in `games/inception/src/` (the nginx rules are applied to any URL)
 - `philosophers.html`: dining philosophers simulation (the program runs in a Web Worker started by `games/mlxweb/wasi-worker.js`)
 - `games/`: programs compiled to WebAssembly, with their files (maps, textures, sounds)
 - `coi-serviceworker.js`: enables cross-origin isolation on GitHub Pages (needed by the Cub3D bonus threads)

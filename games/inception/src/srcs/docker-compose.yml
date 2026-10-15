@@ -1,0 +1,170 @@
+services:
+  nginx:
+    build:
+      context: requirements/nginx
+      dockerfile: Dockerfile
+    container_name: nginx
+    secrets:
+      - domain_name
+    ports:
+      - "443:443"
+    networks:
+      - inception
+    volumes:
+      - wp_data:/var/www/html
+    depends_on:
+      - wordpress
+    restart: always
+
+  wordpress:
+    build:
+      context: requirements/wordpress
+      dockerfile: Dockerfile
+    container_name: wordpress
+    secrets:
+      - domain_name
+      - root_user
+      - database
+      - user_password
+      - root_password
+      - user
+    networks:
+      - inception
+    volumes:
+      - wp_data:/var/www/html
+    depends_on:
+      - mariadb
+    restart: always
+
+  mariadb:
+    build:
+      context: requirements/mariadb
+      dockerfile: Dockerfile
+    container_name: mariadb
+    environment:
+      - MARIADB_DATABASE_FILE=/run/secrets/database
+      - MARIADB_USER_FILE=/run/secrets/user
+      - MARIADB_PASSWORD_FILE=/run/secrets/user_password
+      - MARIADB_ROOT_PASSWORD_FILE=/run/secrets/root_password
+    secrets:
+      - database
+      - user
+      - user_password
+      - root_password
+    networks:
+      - inception
+    volumes:
+      - db_data:/var/lib/mysql
+    restart: always
+
+  adminer:
+    build:
+      context: requirements/bonus/adminer
+      dockerfile: Dockerfile
+    container_name: adminer
+    networks:
+      - inception
+    depends_on:
+      - mariadb
+    restart: always
+  
+  redis:
+    build:
+      context: requirements/bonus/redis
+      dockerfile: Dockerfile
+    container_name: redis
+    networks:
+      - inception
+    volumes:
+      - redis_data:/data
+    secrets:
+      - user_password
+    restart: always
+
+  cadvisor:
+    build:
+      context: requirements/bonus/cadvisor
+      dockerfile: Dockerfile
+    container_name: cadvisor
+    ports:
+      - "8084:8084"
+    networks:
+      - inception
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:ro
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+      - /dev/disk/:/dev/disk:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    privileged: true
+    restart: always
+
+  ftp:
+    build:
+      context: requirements/bonus/ftp
+      dockerfile: Dockerfile
+    container_name: ftp
+    secrets:
+      - ftpuser
+      - ftp-password
+    ports:
+      - "21:21"
+      - "40000-40005:40000-40005"
+    networks:
+      - inception
+    volumes:
+      - wp_data:/var/www/html
+    restart: always
+
+  static-site:
+    build:
+      context: requirements/bonus/static-site
+      dockerfile: Dockerfile
+    container_name: static-site
+    networks:
+      - inception
+    restart: always
+
+networks:
+  inception:
+    driver: bridge
+
+volumes:
+  wp_data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /home/samaouch/data/wordpress
+  db_data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /home/samaouch/data/mariadb
+  redis_data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /home/samaouch/data/redis
+
+secrets:
+  domain_name:
+    file: ./secrets/domain_name.txt
+  root_password:
+    file: ./secrets/root_password.txt
+  user_password:
+    file: ./secrets/user_password.txt
+  root_user:
+    file: ./secrets/root_user.txt
+  user:
+    file: ./secrets/user.txt
+  database:
+    file: ./secrets/database.txt
+  ftpuser:
+    file: ./secrets/ftpuser.txt
+  ftp-password:
+    file: ./secrets/ftp_password.txt
+

@@ -1,0 +1,609 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Inception · Docker infrastructure</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Big+Shoulders+Display:wght@700;800&family=Martian+Mono:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="site.css">
+<link rel="stylesheet" href="game.css">
+<style>
+  :root {
+    --d-bg: #0b0f0e; --d-ink: #dfe7e4; --d-muted: #7d8c88; --d-line: #26312e; --d-card: #131a18;
+    --d-teal: #43c9bb; --d-amber: #f0a050; --d-blue: #6ea8fe; --d-violet: #b892f0; --d-red: #e5534b;
+  }
+  .modes { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; }
+  .tab {
+    font: 600 0.78rem/1 var(--mono); padding: 0.7em 1em; border-radius: var(--radius);
+    border: 1px solid var(--line); background: var(--panel); color: var(--ink); cursor: pointer;
+  }
+  .tab[aria-selected="true"] { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+  .layout { display: grid; gap: 1.25rem; }
+  .diagram { background: var(--d-bg); border-radius: var(--radius); box-shadow: 0 0 0 1px var(--line); overflow-x: auto; }
+  .diagram svg { display: block; width: 100%; min-width: 720px; height: auto; font-family: var(--mono); }
+  .side { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr); gap: 1.25rem; min-width: 0; align-items: start; }
+  .side > [hidden] { display: none !important; }
+  .card { border: 1px solid var(--line); border-radius: var(--radius); background: var(--panel); padding: 1rem 1.1rem; display: grid; gap: 0.7rem; min-width: 0; }
+  .card h3 { font-size: 1.6rem; }
+  .card p { margin: 0; color: var(--muted); }
+  .card .meta { display: flex; flex-wrap: wrap; gap: 0.35rem; }
+  .pill { font: 500 0.68rem/1 var(--mono); padding: 0.45em 0.6em; border-radius: 3px; background: color-mix(in srgb, var(--accent) 12%, transparent); }
+  .pill.bonus { background: color-mix(in srgb, var(--signal) 16%, transparent); }
+  .urlbar { display: flex; align-items: center; border: 1px solid var(--line); border-radius: 999px; background: var(--paper); padding: 0 0.3rem 0 0.9rem; }
+  .urlbar:focus-within { border-color: var(--accent); }
+  .urlbar span { font: 500 0.8rem/1 var(--mono); color: var(--muted); white-space: nowrap; }
+  .urlbar input { flex: 1; width: 0; min-width: 0; font: 500 0.8rem/1 var(--mono); border: 0; background: transparent; color: var(--ink); padding: 0.7em 0.2em; outline: none; }
+  .chips { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+  .chip { font: 500 0.7rem/1.2 var(--mono); padding: 0.5em 0.7em; border-radius: 999px; border: 1px solid var(--line); background: transparent; color: var(--ink); cursor: pointer; }
+  .chip:hover { border-color: var(--accent); }
+  .steps { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.15rem; counter-reset: s; }
+  .steps li { counter-increment: s; display: grid; grid-template-columns: 1.6rem minmax(0, 1fr); gap: 0.5rem; padding: 0.5rem 0.4rem; border-radius: var(--radius); cursor: pointer; font-size: 0.92rem; color: var(--muted); }
+  .steps li::before { content: counter(s); font: 600 0.72rem/1.6rem var(--mono); text-align: center; width: 1.6rem; height: 1.6rem; border-radius: 50%; border: 1px solid var(--line); color: var(--ink); }
+  .steps li.done { color: var(--ink); }
+  .steps li.now { background: color-mix(in srgb, var(--accent) 10%, transparent); color: var(--ink); }
+  .steps li.now::before { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+  .steps li.fail::before { background: var(--signal); color: #fff; border-color: var(--signal); }
+  .steps code { font-size: 0.82em; }
+  .row { display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; }
+  .verdict { font: 600 0.75rem/1.3 var(--mono); }
+  .code { margin: 0; font: 400 0.7rem/1.55 var(--mono); background: var(--stage); color: var(--stage-ink); border-radius: var(--radius); padding: 0.6rem 0; max-height: 30rem; overflow: auto; counter-reset: ln; }
+  .code .l { display: block; padding: 0 0.8rem 0 0; white-space: pre; }
+  .code .l::before { counter-increment: ln; content: counter(ln); display: inline-block; width: 2.6rem; padding-right: 0.8rem; text-align: right; color: #56625f; user-select: none; }
+  .code .l.hl { background: rgba(67, 201, 187, 0.16); box-shadow: inset 3px 0 0 #43c9bb; }
+  .code .c { color: #6f7f7b; } .code .kw { color: #f0a050; } .code .s { color: #9ee6b8; } .code .v { color: #b892f0; }
+  .files { display: flex; flex-wrap: wrap; gap: 0.35rem; }
+  .files button { font: 500 0.7rem/1 var(--mono); padding: 0.5em 0.7em; border-radius: 4px; border: 1px solid var(--line); background: transparent; color: var(--ink); cursor: pointer; }
+  .files button[aria-pressed="true"] { border-color: var(--accent); color: var(--accent); }
+  .preview { height: 22rem; border: 0; width: 100%; border-radius: var(--radius); background: #000; }
+  .about ul { margin: 0; padding-left: 1.1rem; color: var(--muted); display: grid; gap: 0.3rem; }
+  /* diagram */
+  .node rect { fill: var(--d-card); stroke: var(--d-line); stroke-width: 1.5; }
+  .node { cursor: pointer; }
+  .node:hover rect, .node:focus rect { stroke: var(--d-teal); }
+  .node:focus { outline: none; }
+  .node .t { fill: var(--d-ink); font-size: 16px; font-weight: 600; }
+  .node .u { fill: var(--d-muted); font-size: 11px; }
+  .node.bonus rect { stroke-dasharray: 5 4; }
+  .node.vol rect { fill: #10161a; }
+  .node.sel rect { stroke: var(--d-teal); stroke-width: 2.5; }
+  .node.lit rect { stroke: var(--d-amber); stroke-width: 2.5; fill: #1c1a12; }
+  .node.off { opacity: 0.5; }
+  .edge path { fill: none; stroke: #3a4844; stroke-width: 1.6; }
+  .edge.vol path { stroke-dasharray: 3 4; stroke: #33403c; }
+  .edge text { fill: #8d9b97; font-size: 11px; }
+  .edge.lit path { stroke: var(--d-amber); stroke-width: 2.6; }
+  .edge.lit text { fill: var(--d-amber); }
+  .edge.off { opacity: 0.4; }
+  .box { fill: none; stroke: #2c3835; stroke-width: 1.2; }
+  .box-label { fill: var(--d-muted); font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; }
+  .port rect { fill: #182320; stroke: var(--d-teal); }
+  .port text { fill: var(--d-teal); font-size: 11px; font-weight: 600; }
+  .packet { fill: var(--d-amber); filter: drop-shadow(0 0 6px rgba(240, 160, 80, 0.9)); }
+  @media (max-width: 980px) { .side { grid-template-columns: minmax(0, 1fr); } }
+  @media (max-width: 480px) { .urlbar span { font-size: 0.7rem; } }
+</style>
+</head>
+<body>
+<header class="bar">
+  <div class="wrap">
+    <a class="back" href="index.html">← Projects</a>
+    <h1>Inception</h1>
+    <span class="label">Docker Compose · nginx TLS · WordPress · MariaDB</span>
+    <span class="spacer"></span>
+    <a class="btn" href="https://github.com/Unde21/Inception" target="_blank" rel="noopener">Code on GitHub</a>
+  </div>
+</header>
+
+<main class="wrap play">
+  <div class="modes" role="tablist" aria-label="View">
+    <button class="tab" role="tab" id="tab-request" aria-selected="true">Follow a request</button>
+    <button class="tab" role="tab" id="tab-make" aria-selected="false">Replay <code>make</code></button>
+    <button class="tab" role="tab" id="tab-inspect" aria-selected="false">Inspect a container</button>
+    <span class="note">Every box and arrow comes from <code>docker-compose.yml</code>; click one to read its files.</span>
+  </div>
+
+  <div class="layout">
+    <div class="diagram" id="diagram"><svg id="svg" viewBox="0 0 1100 640" role="img" aria-label="Inception architecture diagram"></svg></div>
+
+    <div class="side">
+      <!-- request tracer -->
+      <section class="card" id="panel-request">
+        <h3>Follow a request</h3>
+        <form class="urlbar" id="urlform"><span id="scheme">https://samaouch.42.fr</span><input id="path" value="/" spellcheck="false" autocomplete="off" aria-label="Path"><button class="btn" type="submit">Send</button></form>
+        <div class="chips" id="routes">
+          <button class="chip" type="button" data-path="/">/</button>
+          <button class="chip" type="button" data-path="/wp-login.php">/wp-login.php</button>
+          <button class="chip" type="button" data-path="/wp-content/themes/style.css">a static file</button>
+          <button class="chip" type="button" data-path="/home">/home</button>
+          <button class="chip" type="button" data-path="/adminer">/adminer</button>
+          <button class="chip" type="button" data-path="/cadvisor/">/cadvisor/</button>
+          <button class="chip" type="button" data-proto="ftp">ftp :21</button>
+          <button class="chip" type="button" data-proto="http">http :80</button>
+        </div>
+        <p class="verdict" id="verdict"></p>
+        <ol class="steps" id="steps"></ol>
+        <div class="row"><button class="btn" type="button" id="replay">Replay</button><button class="btn" type="button" id="open-static" hidden>Open the page static-site serves</button></div>
+      </section>
+
+      <!-- make replay -->
+      <section class="card" id="panel-make" hidden>
+        <h3>What <code>make</code> does</h3>
+        <p>Step by step, from the Makefile and each container’s start script. <code>depends_on</code> only orders the starts, so WordPress waits for MariaDB itself.</p>
+        <ol class="steps" id="make-steps"></ol>
+        <div class="row"><button class="btn primary" type="button" id="make-play">Play</button><button class="btn" type="button" id="make-next">Next step</button></div>
+      </section>
+
+      <!-- inspector -->
+      <section class="card" id="panel-inspect" hidden>
+        <h3 id="i-title">nginx</h3>
+        <div class="meta" id="i-meta"></div>
+        <p id="i-text"></p>
+      </section>
+
+      <section class="card" id="files-card">
+        <div class="files" id="files"></div>
+        <pre class="code" id="code" aria-live="polite"></pre>
+      </section>
+    </div>
+  </div>
+
+  <iframe class="preview" id="preview" title="The page served by the static-site container" hidden></iframe>
+
+  <div class="about">
+    <section>
+      <h3>The project</h3>
+      <p>A small infrastructure built with Docker Compose, one service per container, each image written from <code>debian:bookworm</code>: nginx as the only entry point (TLS 1.2/1.3 on port 443), WordPress on PHP-FPM, and MariaDB, with bind-mounted volumes and Docker secrets for every password. Bonus services: Redis cache, Adminer, cAdvisor, an FTP server and a static site.</p>
+    </section>
+    <section>
+      <h3>How to read it</h3>
+      <ul>
+        <li>solid boxes are the mandatory services, dashed boxes the bonus ones</li>
+        <li>the request tracer reads the real <code>nginx.conf</code> and applies nginx’s rules: exact match, longest prefix, then regular expressions in order</li>
+        <li>the <code>make</code> replay quotes the Makefile and the <code>init.sh</code> scripts, line by line</li>
+      </ul>
+    </section>
+    <section>
+      <h3>Why no live demo</h3>
+      <p>Docker needs a Linux kernel (namespaces, cgroups, overlay file systems), which a browser does not have. Instead, everything here is driven by the project’s own files, shown as they are in the repository.</p>
+    </section>
+  </div>
+</main>
+
+<script>
+(function () {
+  'use strict';
+  const $ = (id) => document.getElementById(id);
+  const SRC = 'games/inception/src/';
+  const REQ = 'srcs/requirements/';
+  const NS = 'http://www.w3.org/2000/svg';
+  const files = {};
+  const fetchText = async (p) => (files[p] = files[p] || await fetch(SRC + p).then((r) => (r.ok ? r.text() : '')));
+
+  // ------------------------------------------------------------ the model
+  const C = (id, x, y, title, sub, extra) => ({ id, x, y, w: 170, h: 62, title, sub, kind: 'container', ...extra });
+  const nodes = [
+    { id: 'browser', x: 10, y: 86, w: 120, h: 62, title: 'browser', sub: 'samaouch.42.fr', kind: 'client' },
+    { id: 'ftpclient', x: 10, y: 410, w: 120, h: 62, title: 'FTP client', sub: 'FileZilla, ftp…', kind: 'client' },
+    C('nginx', 270, 86, 'nginx', ':443 · TLS 1.2/1.3'),
+    C('wordpress', 270, 216, 'wordpress', ':9000 · PHP-FPM 8.2'),
+    C('static-site', 480, 216, 'static-site', ':8042 · http.server', { bonus: true }),
+    C('adminer', 690, 216, 'adminer', ':8080 · Adminer 4.17', { bonus: true }),
+    C('cadvisor', 900, 216, 'cadvisor', ':8084 · metrics', { bonus: true }),
+    C('mariadb', 270, 352, 'mariadb', ':3306 · MariaDB'),
+    C('redis', 480, 352, 'redis', ':6379 · object cache', { bonus: true }),
+    C('ftp', 900, 352, 'ftp', ':21 · vsftpd', { bonus: true }),
+    { id: 'wp_data', x: 270, y: 540, w: 228, h: 58, title: 'wp_data', sub: '/home/samaouch/data/wordpress', kind: 'vol' },
+    { id: 'db_data', x: 512, y: 540, w: 216, h: 58, title: 'db_data', sub: '/home/samaouch/data/mariadb', kind: 'vol' },
+    { id: 'redis_data', x: 742, y: 540, w: 204, h: 58, title: 'redis_data', sub: '/home/samaouch/data/redis', kind: 'vol' },
+    { id: 'secrets', x: 960, y: 540, w: 120, h: 58, title: 'secrets', sub: '/run/secrets/*', kind: 'vol' },
+  ];
+  const N = Object.fromEntries(nodes.map((n) => [n.id, n]));
+  const ports = [{ id: 'p443', y: 117, label: '443' }, { id: 'p8084', y: 186, label: '8084' }, { id: 'p21', y: 441, label: '21 · 40000-5' }];
+  // edges: points of an orthogonal path, label position
+  const edges = [
+    { id: 'in443', pts: [[130, 117], [270, 117]], label: 'HTTPS', lx: 206, ly: 108 },
+    { id: 'in21', pts: [[130, 441], [985, 441], [985, 414]], label: 'FTP · passive 40000-40005', lx: 560, ly: 434 },
+    { id: 'in8084', pts: [[180, 186], [1040, 186], [1040, 216]], label: 'published :8084', lx: 600, ly: 180 },
+    { id: 'ng-wp', pts: [[355, 148], [355, 216]], label: 'FastCGI :9000', lx: 362, ly: 186 },
+    { id: 'ng-st', pts: [[440, 108], [565, 108], [565, 216]], label: 'proxy :8042', lx: 572, ly: 162 },
+    { id: 'ng-ad', pts: [[440, 122], [775, 122], [775, 216]], label: 'proxy :8080', lx: 782, ly: 162 },
+    { id: 'ng-ca', pts: [[440, 136], [945, 136], [945, 216]], label: 'proxy :8084', lx: 868, ly: 150 },
+    { id: 'wp-db', pts: [[330, 278], [330, 352]], label: 'SQL :3306', lx: 254, ly: 320 },
+    { id: 'wp-rd', pts: [[400, 278], [400, 318], [535, 318], [535, 352]], label: 'Redis :6379', lx: 420, ly: 312 },
+    { id: 'ad-db', pts: [[775, 278], [775, 334], [420, 334], [420, 352]], label: 'SQL :3306', lx: 690, ly: 328 },
+    { id: 'v-ng', pts: [[270, 132], [254, 132], [254, 569], [270, 569]], vol: true },
+    { id: 'v-wp', pts: [[270, 246], [254, 246]], vol: true },
+    { id: 'v-ftp', pts: [[985, 414], [985, 414]], vol: true, hide: true },
+    { id: 'v-ftp2', pts: [[935, 414], [935, 512], [440, 512], [440, 540]], vol: true },
+    { id: 'v-db', pts: [[300, 414], [300, 490], [595, 490], [595, 540]], vol: true },
+    { id: 'v-rd', pts: [[565, 414], [565, 470], [810, 470], [810, 540]], vol: true },
+  ];
+  const E = Object.fromEntries(edges.map((e) => [e.id, e]));
+
+  const info = {
+    nginx: { files: ['nginx/Dockerfile', 'nginx/conf/nginx.conf'], text: 'The only entry point: it terminates TLS with a self-signed certificate made by openssl when the image is built, serves WordPress’s static files from the shared volume, and passes PHP to WordPress over FastCGI.', tags: ['debian:bookworm', 'EXPOSE 443', 'restart: always'] },
+    wordpress: { files: ['wordpress/Dockerfile', 'wordpress/tools/init.sh', 'wordpress/conf/www.conf'], text: 'PHP-FPM 8.2 listening on port 9000, no web server inside. On first start, wp-cli downloads WordPress 6.4.3, writes wp-config.php from the secrets, installs the site, an author account and the Redis cache plugin.', tags: ['debian:bookworm', 'EXPOSE 9000', 'depends_on: mariadb'] },
+    mariadb: { files: ['mariadb/Dockerfile', 'mariadb/tools/init.sh', 'mariadb/conf/mariadb.cnf'], text: 'The database. If the database folder does not exist yet, init.sh starts a temporary server, sets the root password and creates the WordPress database and user from the secrets, then runs mysqld_safe for good.', tags: ['debian:bookworm', 'EXPOSE 3306', 'volume: db_data'] },
+    redis: { files: ['bonus/redis/Dockerfile', 'bonus/redis/tools/init.sh'], text: 'Object cache for WordPress (WP_REDIS_HOST in wp-config.php), protected by a password read from a secret.', tags: ['bonus', 'redis-server', 'volume: redis_data'] },
+    adminer: { files: ['bonus/adminer/Dockerfile'], text: 'Adminer 4.17.1, a one-file PHP database admin, run with PHP’s built-in server on port 8080 and reached through nginx at /adminer.', tags: ['bonus', 'EXPOSE 8080', 'depends_on: mariadb'] },
+    cadvisor: { files: ['bonus/cadvisor/Dockerfile'], text: 'Google’s cAdvisor, reading the host’s /sys, /var/lib/docker and the Docker socket (read-only, privileged) to chart every container’s CPU, memory and network.', tags: ['bonus', 'EXPOSE 8084', 'privileged'] },
+    ftp: { files: ['bonus/ftp/Dockerfile', 'bonus/ftp/tools/init.sh', 'bonus/ftp/conf/vsftpd.conf'], text: 'vsftpd with one local user from the secrets, jailed in the WordPress volume, so files uploaded by FTP appear on the site. Passive mode uses ports 40000 to 40005.', tags: ['bonus', 'ports 21, 40000-40005', 'volume: wp_data'] },
+    'static-site': { files: ['bonus/static-site/Dockerfile', 'bonus/static-site/www/index.html', 'bonus/static-site/www/Global.css'], text: 'A static page in the Matrix style, served by Python’s http.server and reached through nginx at /home.', tags: ['bonus', 'EXPOSE 8042', 'python3'] },
+    wp_data: { files: ['docker-compose.yml'], key: 'volumes:', text: 'WordPress files, bind-mounted from the host. Shared by nginx (to serve static files), wordpress (PHP) and ftp.', tags: ['bind mount', 'nginx · wordpress · ftp'] },
+    db_data: { files: ['docker-compose.yml'], key: 'volumes:', text: 'MariaDB’s data directory, so the database survives docker compose down.', tags: ['bind mount', 'mariadb'] },
+    redis_data: { files: ['docker-compose.yml'], key: 'volumes:', text: 'Redis persistence directory.', tags: ['bind mount', 'redis'] },
+    secrets: { files: ['docker-compose.yml'], key: 'secrets:', text: 'Passwords and names live in files under srcs/secrets/ (not in the repository) and are mounted read-only in /run/secrets/ of the containers that list them. No password is written in a Dockerfile or in the environment.', tags: ['8 secrets', 'files, not env vars'] },
+    browser: { files: ['nginx/conf/nginx.conf'], text: 'samaouch.42.fr points to the VM. Only port 443 is published for the web, so every page goes through nginx.', tags: ['HTTPS only'] },
+    ftpclient: { files: ['bonus/ftp/conf/vsftpd.conf'], text: 'Port 21 and the passive range are published straight to the ftp container.', tags: ['FTP'] },
+  };
+
+  // ------------------------------------------------------------ drawing
+  const svg = $('svg');
+  const el = (tag, attrs, parent) => { const e = document.createElementNS(NS, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); if (parent) parent.appendChild(e); return e; };
+  const pathD = (pts) => pts.map((p, i) => (i ? 'L' : 'M') + p[0] + ' ' + p[1]).join(' ');
+  function draw() {
+    el('rect', { x: 180, y: 20, width: 910, height: 600, rx: 10, class: 'box' }, svg);
+    el('text', { x: 196, y: 42, class: 'box-label' }, svg).textContent = 'host VM · Docker engine';
+    el('rect', { x: 240, y: 62, width: 834, height: 380, rx: 8, class: 'box', 'stroke-dasharray': '6 5' }, svg);
+    el('text', { x: 256, y: 80, class: 'box-label' }, svg).textContent = 'network inception · bridge';
+    el('text', { x: 256, y: 532, class: 'box-label' }, svg).textContent = 'volumes · secrets';
+    const eg = el('g', {}, svg);
+    for (const e of edges) {
+      if (e.hide) continue;
+      const g = el('g', { class: 'edge' + (e.vol ? ' vol' : ''), 'data-id': e.id }, eg);
+      e.path = el('path', { d: pathD(e.pts) }, g);
+      if (e.label) el('text', { x: e.lx, y: e.ly }, g).textContent = e.label;
+      e.g = g;
+    }
+    for (const p of ports) {
+      const g = el('g', { class: 'port' }, svg);
+      const w = p.label.length * 7.4 + 14;
+      el('rect', { x: 180 - w / 2, y: p.y - 10, width: w, height: 20, rx: 4 }, g);
+      el('text', { x: 180, y: p.y + 4, 'text-anchor': 'middle' }, g).textContent = p.label;
+    }
+    for (const n of nodes) {
+      const g = el('g', { class: 'node' + (n.bonus ? ' bonus' : '') + (n.kind === 'vol' ? ' vol' : ''), tabindex: 0, role: 'button', 'aria-label': n.title, 'data-id': n.id }, svg);
+      el('rect', { x: n.x, y: n.y, width: n.w, height: n.h, rx: 7 }, g);
+      el('text', { x: n.x + 14, y: n.y + 26, class: 't' }, g).textContent = n.title;
+      el('text', { x: n.x + 14, y: n.y + 45, class: 'u' }, g).textContent = n.sub;
+      g.addEventListener('click', () => inspect(n.id));
+      g.addEventListener('keydown', (ev) => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); inspect(n.id); } });
+      n.g = g;
+    }
+  }
+  function highlight(litNodes = [], litEdges = [], dim = false) {
+    for (const n of nodes) { n.g.classList.toggle('lit', litNodes.includes(n.id)); n.g.classList.toggle('off', dim && !litNodes.includes(n.id)); }
+    for (const e of edges) if (e.g) { e.g.classList.toggle('lit', litEdges.includes(e.id)); e.g.classList.toggle('off', dim && !litEdges.includes(e.id)); }
+  }
+  let packet = null, anim = null;
+  function travel(edgeIds, reverse) {
+    cancelAnimationFrame(anim);
+    if (!packet) packet = el('circle', { r: 6, class: 'packet' }, svg);
+    const paths = edgeIds.map((id) => E[id] && E[id].path).filter(Boolean);
+    if (!paths.length || matchMedia('(prefers-reduced-motion: reduce)').matches) { packet.setAttribute('r', 0); return; }
+    packet.setAttribute('r', 6);
+    const lens = paths.map((p) => p.getTotalLength());
+    const total = lens.reduce((a, b) => a + b, 0);
+    const t0 = performance.now(), dur = Math.max(500, total * 2.2);
+    const step = (now) => {
+      let d = Math.min(1, (now - t0) / dur) * total;
+      if (reverse) d = total - d;
+      let i = 0;
+      while (i < paths.length - 1 && d > lens[i]) { d -= lens[i]; i++; }
+      const pt = paths[i].getPointAtLength(Math.min(d, lens[i]));
+      packet.setAttribute('cx', pt.x); packet.setAttribute('cy', pt.y);
+      if (now - t0 < dur) anim = requestAnimationFrame(step);
+    };
+    anim = requestAnimationFrame(step);
+  }
+
+  // ------------------------------------------------------------ code viewer
+  function hlLine(s, file) {
+    const esc = (t) => t.replace(/&/g, '&amp;').replace(/</g, '&lt;');
+    if (/^\s*(#|;)/.test(s)) return '<span class="c">' + esc(s) + '</span>';
+    let h = esc(s);
+    h = h.replace(/(&quot;|"[^"]*"|'[^']*')/g, '<span class="s">$1</span>');
+    h = h.replace(/(\$\{?[A-Za-z_][A-Za-z0-9_]*\}?)/g, '<span class="v">$1</span>');
+    if (/Dockerfile$/.test(file)) h = h.replace(/^(\s*)(FROM|RUN|COPY|EXPOSE|CMD|ENTRYPOINT|WORKDIR|ENV|ARG)\b/, '$1<span class="kw">$2</span>');
+    else if (/\.conf$/.test(file)) h = h.replace(/^(\s*)(location|server|listen|proxy_pass|fastcgi_pass|root|index|try_files|ssl_\w+|include|server_name)\b/, '$1<span class="kw">$2</span>');
+    else if (/\.sh$/.test(file)) h = h.replace(/\b(if|then|fi|else|until|do|done|exec|echo)\b/g, '<span class="kw">$1</span>');
+    else if (/\.yml$/.test(file)) h = h.replace(/^(\s*)([\w-]+):/, '$1<span class="kw">$2</span>:');
+    return h;
+  }
+  let shownFile = null;
+  async function showFile(file, lines = [], scroll = true) {
+    const text = await fetchText(file);
+    shownFile = file;
+    const code = $('code');
+    code.innerHTML = text.replace(/\n$/, '').split('\n').map((l, i) => `<span class="l${lines.includes(i + 1) ? ' hl' : ''}">${hlLine(l, file) || ' '}</span>`).join('');
+    document.querySelectorAll('#files button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.file === file)));
+    if (scroll && lines.length) {
+      const first = code.children[lines[0] - 1];
+      if (first) code.scrollTop = first.offsetTop - code.clientHeight / 3;
+    } else if (scroll) code.scrollTop = 0;
+  }
+  function setFiles(list, current) {
+    const box = $('files');
+    box.innerHTML = '';
+    for (const f of list) {
+      const b = document.createElement('button');
+      b.type = 'button'; b.dataset.file = f; b.textContent = f.split('/').slice(-2).join('/').replace(/^srcs\//, '');
+      b.title = f;
+      b.addEventListener('click', () => showFile(f));
+      box.appendChild(b);
+    }
+    return showFile(current || list[0]);
+  }
+  const lineOf = (text, re, from = 0) => { const ls = text.split('\n'); for (let i = from; i < ls.length; i++) if (re.test(ls[i])) return i + 1; return 0; };
+  function blockLines(text, startLine) {
+    // lines of an nginx { } block, or of an indented YAML block
+    const ls = text.split('\n');
+    const out = [startLine];
+    if (ls[startLine - 1].includes('{')) {
+      let depth = 0;
+      for (let i = startLine - 1; i < ls.length; i++) {
+        depth += (ls[i].match(/{/g) || []).length - (ls[i].match(/}/g) || []).length;
+        if (i > startLine - 1) out.push(i + 1);
+        if (depth <= 0) break;
+      }
+      return out;
+    }
+    const ind = ls[startLine - 1].match(/^\s*/)[0].length;
+    for (let i = startLine; i < ls.length; i++) {
+      if (ls[i].trim() && ls[i].match(/^\s*/)[0].length <= ind) break;
+      if (ls[i].trim()) out.push(i + 1);
+    }
+    return out;
+  }
+
+  // ------------------------------------------------------------ nginx location matching
+  let nginx = null;
+  function parseNginx(text) {
+    const locs = [];
+    text.split('\n').forEach((l, i) => {
+      const m = /^\s*location\s+(=|~\*|~|\^~)?\s*(\S+)\s*\{/.exec(l);
+      if (m) locs.push({ mod: m[1] || '', arg: m[2], line: i + 1 });
+    });
+    for (const loc of locs) {
+      loc.lines = blockLines(text, loc.line);
+      const body = loc.lines.map((n) => text.split('\n')[n - 1]).join('\n');
+      const pp = /proxy_pass\s+([^;]+);/.exec(body), fc = /fastcgi_pass\s+([^;]+);/.exec(body), tf = /try_files\s+([^;]+);/.exec(body);
+      loc.proxy = pp && pp[1].trim(); loc.fastcgi = fc && fc[1].trim(); loc.tryFiles = tf && tf[1].trim();
+      loc.re = loc.mod.startsWith('~') ? new RegExp(loc.arg, loc.mod === '~*' ? 'i' : '') : null;
+    }
+    return { text, locs, listen: lineOf(text, /listen\s+443/), ssl: lineOf(text, /ssl_protocols/), cert: lineOf(text, /ssl_certificate\s/), root: lineOf(text, /^\s*root\s/), server: lineOf(text, /server_name/) };
+  }
+  function match(uri) {
+    const L = nginx.locs;
+    const exact = L.find((l) => l.mod === '=' && l.arg === uri);
+    if (exact) return { loc: exact, why: 'exact match' };
+    let best = null;
+    for (const l of L) if (!l.re && l.mod !== '=' && uri.startsWith(l.arg) && (!best || l.arg.length > best.arg.length)) best = l;
+    if (best && best.mod === '^~') return { loc: best, why: 'longest prefix (^~ stops the regex search)' };
+    const rx = L.find((l) => l.re && l.re.test(uri));
+    if (rx) return { loc: rx, why: best ? `regex wins over the prefix “${best.arg}”` : 'first matching regex', prefix: best };
+    return best ? { loc: best, why: 'longest matching prefix' } : null;
+  }
+
+  // ------------------------------------------------------------ request tracer
+  let steps = [], cur = -1, timer = null;
+  const NG = REQ + 'nginx/conf/nginx.conf';
+  function step(text, opt) { steps.push({ text, ...opt }); }
+  function buildRoute(input, proto) {
+    steps = [];
+    const n = nginx;
+    if (proto === 'ftp') {
+      step('An FTP client connects to <code>samaouch.42.fr:21</code>. Compose publishes <code>21:21</code> straight to the ftp container, no nginx in between.', { nodes: ['ftpclient', 'ftp'], edges: ['in21'], file: 'srcs/docker-compose.yml', find: /- "21:21"/ });
+      step('vsftpd checks the local user created by <code>init.sh</code> from the <code>ftpuser</code> and <code>ftp-password</code> secrets.', { nodes: ['ftp', 'secrets'], file: REQ + 'bonus/ftp/tools/init.sh', find: /chpasswd/ });
+      step('Data goes over passive ports 40000 to 40005, published too.', { nodes: ['ftp'], edges: ['in21'], file: REQ + 'bonus/ftp/conf/vsftpd.conf', find: /pasv_m(in|ax)_port/ });
+      step('The user is jailed in <code>/var/www/html</code>, the <code>wp_data</code> volume: a file uploaded here is instantly on the WordPress site.', { nodes: ['ftp', 'wp_data'], edges: ['v-ftp2'], file: REQ + 'bonus/ftp/conf/vsftpd.conf', find: /local_root/ });
+      return { verdict: 'FTP → ftp container → wp_data', ok: true };
+    }
+    if (proto === 'http') {
+      step('A plain HTTP request to port 80. Compose only publishes 443 for the web (<code>"443:443"</code>), so nothing listens on 80.', { nodes: ['browser'], edges: [], file: 'srcs/docker-compose.yml', find: /- "443:443"/ });
+      step('The connection is refused before it reaches any container: the subject wants HTTPS only.', { nodes: ['browser'], fail: true });
+      return { verdict: 'Connection refused: only port 443 is published', ok: false };
+    }
+    let uri = input.trim() || '/';
+    if (!uri.startsWith('/')) uri = '/' + uri;
+    const q = uri.indexOf('?');
+    const path = decodeURIComponent(q >= 0 ? uri.slice(0, q) : uri);
+    step('The browser opens a TLS connection to <code>samaouch.42.fr:443</code>; Docker forwards the published port to nginx.', { nodes: ['browser', 'nginx'], edges: ['in443'], file: 'srcs/docker-compose.yml', find: /- "443:443"/ });
+    step('nginx answers with the self-signed certificate made at build time and accepts only TLS 1.2 and 1.3.', { nodes: ['nginx'], file: NG, lines: [n.listen, n.listen + 1, n.cert, n.cert + 1, n.ssl] });
+    let m = match(path);
+    if (!m) { step('No location matches: 404.', { nodes: ['nginx'], fail: true }); return { verdict: '404 from nginx', ok: false }; }
+    step(`<code>${esc(path)}</code> → <code>location ${m.loc.mod ? m.loc.mod + ' ' : ''}${esc(m.loc.arg)}</code> (${m.why}).`, { nodes: ['nginx'], file: NG, lines: m.loc.lines });
+    let loc = m.loc;
+    if (loc.tryFiles && !loc.proxy && !loc.fastcgi) {
+      const isDir = path.endsWith('/');
+      const looksFile = /\.[a-z0-9]{1,5}$/i.test(path);
+      if (isDir) {
+        step(`<code>try_files ${esc(loc.tryFiles)}</code>: <code>${esc(path)}</code> is a folder of <code>wp_data</code>, so nginx looks for its <code>index index.php</code>, and restarts the matching on <code>${esc(path)}index.php</code>.`, { nodes: ['nginx', 'wp_data'], edges: ['v-ng'], file: NG, lines: loc.lines });
+        const m2 = match(path + 'index.php');
+        if (!m2 || !m2.loc.fastcgi) return { verdict: '403 or 404 from nginx', ok: false };
+        step(`<code>${esc(path)}index.php</code> → <code>location ~ ${esc(m2.loc.arg)}</code> (${m2.why}).`, { nodes: ['nginx'], file: NG, lines: m2.loc.lines });
+        loc = m2.loc;
+      } else if (looksFile) {
+        step(`<code>try_files ${esc(loc.tryFiles)}</code>: nginx reads <code>/var/www/html${esc(path)}</code> straight from the <code>wp_data</code> volume it shares with WordPress, without asking PHP. If the file does not exist, it answers 404 itself.`, { nodes: ['nginx', 'wp_data'], edges: ['v-ng'], file: NG, lines: loc.lines });
+        step('The file is sent back over TLS.', { nodes: ['browser', 'nginx'], edges: ['in443'], back: true });
+        return { verdict: '200 from nginx (static file), or 404 if missing', ok: true };
+      } else {
+        step(`<code>try_files ${esc(loc.tryFiles)}</code>: no file and no folder <code>${esc(path)}</code> in <code>wp_data</code>, so nginx answers 404 itself, without asking WordPress. Pretty permalinks would need <code>/index.php?$args</code> as a last resort.`, { nodes: ['nginx', 'wp_data'], edges: ['v-ng'], file: NG, lines: loc.lines, fail: true });
+        return { verdict: '404 from nginx', ok: false };
+      }
+    }
+    if (loc.fastcgi) {
+      const target = m.loc === loc ? path : path + 'index.php';
+      const wpFile = /^\/(index|wp-[a-z-]+|xmlrpc)\.php$|^\/wp-admin\/([\w-]+\/)?[\w-]+\.php$|^\/wp-includes\//.test(target);
+      if (!wpFile) {
+        step(`FastCGI to <code>${esc(loc.fastcgi)}</code> with <code>SCRIPT_FILENAME /var/www/html${esc(target)}</code>.`, { nodes: ['nginx', 'wordpress'], edges: ['ng-wp'], file: NG, lines: loc.lines });
+        step(`WordPress has no <code>${esc(target)}</code> in <code>wp_data</code>, so PHP-FPM answers “File not found.” with a 404, which nginx passes back.`, { nodes: ['wordpress', 'wp_data'], edges: ['v-wp'], fail: true, file: REQ + 'wordpress/conf/www.conf', find: /^listen/ });
+        return { verdict: '404 “File not found.” from PHP-FPM', ok: false };
+      }
+      step(`FastCGI to <code>${esc(loc.fastcgi)}</code>: Docker’s DNS turns the service name into the container’s address on the <code>inception</code> network. <code>SCRIPT_FILENAME</code> tells PHP-FPM which file to run.`, { nodes: ['nginx', 'wordpress'], edges: ['ng-wp'], file: NG, lines: loc.lines });
+      step('PHP-FPM, listening on port 9000, takes the request with one of its 5 workers.', { nodes: ['wordpress'], file: REQ + 'wordpress/conf/www.conf', find: /^(listen|pm\.max_children)/ });
+      step('WordPress loads <code>wp-config.php</code>, written by <code>init.sh</code> from the secrets, and looks into Redis first for cached objects.', { nodes: ['wordpress', 'redis'], edges: ['wp-rd'], file: REQ + 'wordpress/tools/init.sh', find: /WP_REDIS_(HOST|PORT)|WP_CACHE/ });
+      step('Whatever is not cached is read from MariaDB, reached by its service name.', { nodes: ['wordpress', 'mariadb', 'db_data'], edges: ['wp-db', 'v-db'], file: REQ + 'wordpress/tools/init.sh', find: /DB_HOST|DB_NAME|DB_USER'/ });
+      step('The HTML goes back through FastCGI to nginx, then to the browser over TLS.', { nodes: ['browser', 'nginx', 'wordpress'], edges: ['ng-wp', 'in443'], back: true });
+      return { verdict: '200 rendered by WordPress (PHP-FPM)', ok: true };
+    }
+    if (loc.proxy) {
+      const host = /\/\/([^:/]+)/.exec(loc.proxy)[1];
+      const edge = { 'static-site': 'ng-st', adminer: 'ng-ad', cadvisor: 'ng-ca' }[host];
+      const slash = /\/\/[^/]+\/.*$/.test(loc.proxy);
+      const upstream = slash ? loc.proxy.replace(/^https?:\/\/[^/]+/, '') + path.slice(loc.arg.length) : path;
+      step(`<code>proxy_pass ${esc(loc.proxy)}</code>: a new HTTP request to the <code>${host}</code> container. ${slash ? `Because the target ends with a path, nginx replaces <code>${esc(loc.arg)}</code> with it: the container receives <code>${esc(upstream || '/')}</code>.` : 'The URI is passed unchanged.'}`, { nodes: ['nginx', host], edges: [edge], file: NG, lines: loc.lines });
+      if (host === 'static-site') {
+        step('Python’s <code>http.server</code> serves the files copied into the image (and tidies the double slash).', { nodes: ['static-site'], file: REQ + 'bonus/static-site/Dockerfile', find: /CMD|COPY/ });
+        $('open-static').hidden = false;
+      } else if (host === 'adminer') {
+        step('PHP’s built-in server runs <code>index.php</code>, the Adminer file downloaded at build time.', { nodes: ['adminer'], file: REQ + 'bonus/adminer/Dockerfile', find: /CMD|wget/ });
+        step('Adminer logs in to MariaDB on port 3306 with the user you type.', { nodes: ['adminer', 'mariadb'], edges: ['ad-db'], file: REQ + 'mariadb/conf/mariadb.cnf', find: /bind-address|port/ });
+      } else if (host === 'cadvisor') {
+        step('cAdvisor runs with <code>--url_base_prefix=/cadvisor</code>, so its pages and links work behind nginx. It reads the host through read-only mounts.', { nodes: ['cadvisor'], file: REQ + 'bonus/cadvisor/Dockerfile', find: /CMD/ });
+      }
+      step('The answer comes back through nginx, over TLS.', { nodes: ['browser', 'nginx', host], edges: [edge, 'in443'], back: true });
+      return { verdict: `200 from ${host}, through nginx`, ok: true };
+    }
+    return { verdict: '?', ok: false };
+  }
+  function esc(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;'); }
+
+  function renderSteps(list, box) {
+    box.innerHTML = '';
+    list.forEach((s, i) => {
+      const li = document.createElement('li');
+      li.innerHTML = '<span>' + s.text + '</span>';
+      li.addEventListener('click', () => go(i, box, list));
+      box.appendChild(li);
+    });
+  }
+  async function go(i, box, list) {
+    cur = i;
+    const s = list[i];
+    [...box.children].forEach((li, k) => { li.className = k < i ? 'done' : k === i ? 'now' + (s.fail ? ' fail' : '') : ''; });
+    highlight(s.nodes || [], s.edges || [], true);
+    travel(s.edges || [], s.back);
+    if (s.file) {
+      let lines = s.lines || [];
+      if (s.find) {
+        const text = await fetchText(s.file);
+        lines = text.split('\n').map((l, k) => (s.find.test(l) ? k + 1 : 0)).filter(Boolean);
+      }
+      const owner = Object.keys(info).find((k) => info[k].files.some((f) => REQ + f === s.file || f === s.file));
+      const list2 = owner ? info[owner].files.map((f) => (f === 'docker-compose.yml' ? 'srcs/docker-compose.yml' : REQ + f)) : [s.file];
+      if (!list2.includes(s.file)) list2.unshift(s.file);
+      if (shownFile !== s.file || $('files').children.length !== list2.length) await setFiles(list2, s.file);
+      await showFile(s.file, lines.filter(Boolean));
+    }
+  }
+  function play(list, box, delay = 2100) {
+    clearInterval(timer);
+    let i = 0;
+    go(0, box, list);
+    timer = setInterval(() => { i++; if (i >= list.length) { clearInterval(timer); return; } go(i, box, list); }, delay);
+  }
+  function trace(path, proto) {
+    $('open-static').hidden = true;
+    $('preview').hidden = true;
+    $('scheme').textContent = proto === 'ftp' ? 'ftp://samaouch.42.fr:21' : proto === 'http' ? 'http://samaouch.42.fr:80' : 'https://samaouch.42.fr';
+    const r = buildRoute(path, proto);
+    $('verdict').textContent = '→ ' + r.verdict;
+    $('verdict').style.color = r.ok ? 'var(--accent)' : 'var(--signal)';
+    renderSteps(steps, $('steps'));
+    play(steps, $('steps'));
+    lastTrace = [path, proto];
+  }
+  let lastTrace = ['/', null];
+  $('urlform').addEventListener('submit', (e) => { e.preventDefault(); trace($('path').value, null); });
+  document.querySelectorAll('#routes .chip').forEach((b) => b.addEventListener('click', () => {
+    if (b.dataset.path !== undefined) $('path').value = b.dataset.path;
+    trace(b.dataset.path || '/', b.dataset.proto || null);
+  }));
+  $('replay').addEventListener('click', () => trace(...lastTrace));
+
+  // nginx would strip "/home" from the URI; the copy below does the same
+  $('open-static').addEventListener('click', async () => {
+    const base = SRC + REQ + 'bonus/static-site/www/';
+    const html = (await fetchText(REQ + 'bonus/static-site/www/index.html')).replace(/(href|src)="\/home\//g, '$1="').replace(/<a href="\//g, '<a target="_top" href="#trace=/');
+    const f = $('preview');
+    f.hidden = false;
+    f.srcdoc = html.replace('<head>', `<head><base href="${new URL(base, location.href).href}">`);
+    f.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  });
+  window.addEventListener('hashchange', () => {
+    const m = /^#trace=(.*)$/.exec(location.hash);
+    if (m) { $('path').value = decodeURIComponent(m[1]); select('request'); trace($('path').value, null); $('diagram').scrollIntoView({ behavior: 'smooth' }); }
+  });
+
+  // ------------------------------------------------------------ make replay
+  const MK = 'Makefile', MDB = REQ + 'mariadb/tools/init.sh', WP = REQ + 'wordpress/tools/init.sh';
+  const makeSteps = [
+    { text: '<code>make</code> runs <code>setup</code> first: it creates the three host folders the volumes bind to.', nodes: ['wp_data', 'db_data', 'redis_data'], file: MK, find: /mkdir -p|DATA_PATH =/ },
+    { text: '<code>docker compose up -d --build</code> builds eight images, all from <code>debian:bookworm</code>.', nodes: nodes.filter((x) => x.kind === 'container').map((x) => x.id), file: MK, find: /docker compose -f \$\(COMPOSE_FILE\) up/ },
+    { text: 'While building nginx, openssl makes a self-signed certificate for <code>samaouch.42.fr</code>.', nodes: ['nginx'], file: REQ + 'nginx/Dockerfile', find: /openssl|-out|-keyout|-subj/ },
+    { text: 'mariadb starts first (it depends on nothing). Its folder is empty, so <code>init.sh</code> installs a fresh database and starts a temporary server.', nodes: ['mariadb', 'db_data'], edges: ['v-db'], file: MDB, find: /if \[ ! -d|mysql_install_db|mysqld_safe --datadir=\/var\/lib\/mysql &/ },
+    { text: 'It reads the secrets, sets the root password, creates the database and the WordPress user, then restarts MariaDB as the main process.', nodes: ['mariadb', 'secrets'], file: MDB, find: /\/run\/secrets|ALTER USER|CREATE DATABASE|CREATE USER|GRANT|exec mysqld_safe/ },
+    { text: 'redis starts with a password from the <code>user_password</code> secret.', nodes: ['redis', 'secrets', 'redis_data'], edges: ['v-rd'], file: REQ + 'bonus/redis/tools/init.sh', find: /redis-server|secrets/ },
+    { text: 'wordpress starts after mariadb (<code>depends_on</code>), installs wp-cli and downloads WordPress 6.4.3 into the shared volume.', nodes: ['wordpress', 'wp_data'], edges: ['v-wp', 'v-ng'], file: WP, find: /wp-cli\.phar$|wp core download/ },
+    { text: '<code>depends_on</code> does not wait for MariaDB to be ready, so the script polls port 3306 with netcat, then <code>wp db check</code>.', nodes: ['wordpress', 'mariadb'], edges: ['wp-db'], file: WP, find: /until nc -z|until wp db check|Waiting for MariaDB/ },
+    { text: 'It writes <code>wp-config.php</code> from the secrets, with <code>DB_HOST mariadb</code> and <code>WP_REDIS_HOST redis</code>: service names, resolved by Docker’s DNS.', nodes: ['wordpress', 'secrets', 'redis'], edges: ['wp-rd'], file: WP, find: /define\('DB_|WP_REDIS_HOST/ },
+    { text: 'First start only: <code>wp core install</code>, an author account, the redis-cache plugin. Then PHP-FPM runs in the foreground as PID 1.', nodes: ['wordpress', 'redis'], file: WP, find: /wp core install|wp user create|wp plugin install|wp redis enable|exec \/usr\/sbin\/php-fpm/ },
+    { text: 'nginx starts after wordpress and listens on 443, <code>daemon off</code> so the container lives as long as nginx.', nodes: ['nginx', 'wordpress', 'browser'], edges: ['in443', 'ng-wp'], file: REQ + 'nginx/Dockerfile', find: /CMD|EXPOSE/ },
+    { text: 'The bonus services come up beside them. Every service has <code>restart: always</code>, so a crash brings it back. The site is ready at https://samaouch.42.fr.', nodes: ['adminer', 'cadvisor', 'ftp', 'static-site', 'nginx'], edges: ['ng-st', 'ng-ad', 'ng-ca', 'in21', 'in8084'], file: 'srcs/docker-compose.yml', find: /restart: always/ },
+  ];
+  renderSteps(makeSteps, $('make-steps'));
+  $('make-play').addEventListener('click', () => play(makeSteps, $('make-steps'), 2600));
+  $('make-next').addEventListener('click', () => { clearInterval(timer); go(Math.min(makeSteps.length - 1, (cur < 0 || mode !== 'make' ? -1 : cur) + 1), $('make-steps'), makeSteps); });
+
+  // ------------------------------------------------------------ inspector
+  async function inspect(id) {
+    clearInterval(timer);
+    select('inspect', true);
+    const d = info[id];
+    nodes.forEach((n) => n.g.classList.toggle('sel', n.id === id));
+    highlight([id], [], false);
+    $('i-title').textContent = N[id].title;
+    $('i-text').textContent = d.text;
+    $('i-meta').innerHTML = d.tags.map((t) => `<span class="pill${t === 'bonus' ? ' bonus' : ''}">${esc(t)}</span>`).join('');
+    const list = d.files.map((f) => (f === 'docker-compose.yml' ? 'srcs/docker-compose.yml' : REQ + f));
+    if (N[id].kind === 'container' && !list.includes('srcs/docker-compose.yml')) list.push('srcs/docker-compose.yml');
+    await setFiles(list, list[0]);
+    if (d.key) {
+      const text = await fetchText('srcs/docker-compose.yml');
+      const start = lineOf(text, new RegExp('^' + d.key));
+      const sub = lineOf(text, new RegExp('^\\s+' + id + ':'), start);
+      showFile('srcs/docker-compose.yml', blockLines(text, sub || start));
+    }
+    // the compose block of a container, highlighted when that tab is opened
+    const cb = $('files').querySelector('[data-file="srcs/docker-compose.yml"]');
+    if (cb && !d.key) cb.onclick = async () => { const text = await fetchText('srcs/docker-compose.yml'); showFile('srcs/docker-compose.yml', blockLines(text, lineOf(text, new RegExp('^  ' + id + ':')))); };
+  }
+
+  // ------------------------------------------------------------ modes
+  let mode = 'request';
+  function select(m, keep) {
+    mode = m;
+    for (const k of ['request', 'make', 'inspect']) {
+      $('tab-' + k).setAttribute('aria-selected', String(k === m));
+      $('panel-' + k).hidden = k !== m;
+    }
+    if (!keep) { clearInterval(timer); nodes.forEach((n) => n.g.classList.remove('sel')); }
+  }
+  $('tab-request').addEventListener('click', () => { select('request'); trace(...lastTrace); });
+  $('tab-make').addEventListener('click', () => { select('make'); highlight([], [], false); cur = -1; [...$('make-steps').children].forEach((li) => { li.className = ''; }); setFiles([MK, 'srcs/docker-compose.yml']); });
+  $('tab-inspect').addEventListener('click', () => inspect('nginx'));
+
+  // ------------------------------------------------------------ boot
+  draw();
+  fetchText(NG).then((t) => {
+    nginx = parseNginx(t);
+    const start = /^#trace=(.*)$/.exec(location.hash);
+    trace(start ? decodeURIComponent(start[1]) : '/', null);
+  });
+})();
+</script>
+</body>
+</html>

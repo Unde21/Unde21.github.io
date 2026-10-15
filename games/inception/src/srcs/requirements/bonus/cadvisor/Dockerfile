@@ -1,0 +1,9 @@
+FROM debian:bookworm
+
+RUN apt-get update && apt-get install -y wget && \
+    wget https://github.com/google/cadvisor/releases/download/v0.47.0/cadvisor-v0.47.0-linux-amd64 -O /usr/bin/cadvisor && \
+    chmod +x /usr/bin/cadvisor
+
+EXPOSE 8084
+
+CMD ["/usr/bin/cadvisor", "-logtostderr", "--port=8084", "--url_base_prefix=/cadvisor"]
