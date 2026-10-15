@@ -444,6 +444,37 @@
       await sys.out(r + '\n');
       return r === 0 ? 1 : 0;
     },
+    // A tiny node-like interpreter for scripts (CGI scripts of webserv):
+    // process.env / argv / stdout.write / exit, console.log, and
+    // `await process.stdin.read()` for the whole request body.
+    async node(sys) {
+      const file = sys.argv[1];
+      if (!file) { await sys.err('node: a script is required (no REPL here)\n'); return 9; }
+      const n = sys.fs.lookup(sys.resolve(file));
+      if (!n || n.type !== 'file') { await sys.err(`node: cannot find module '${file}'\n`); return 1; }
+      let out = Promise.resolve(), code = 0;
+      const write = (x) => { out = out.then(() => sys.out(String(x))); return true; };
+      class Exit { constructor(c) { this.code = c; } }
+      const process = {
+        argv: ['node', ...sys.argv.slice(1)], env: { ...sys.env }, pid: sys.pid, cwd: () => sys.cwd,
+        stdout: { write }, stderr: { write: (x) => { out = out.then(() => sys.err(String(x))); return true; } },
+        stdin: { read: () => sys.readAll(0) },
+        exit(c = 0) { throw new Exit(c); },
+      };
+      const fmt = (a) => a.map((v) => (typeof v === 'string' ? v : JSON.stringify(v))).join(' ');
+      const console = { log: (...a) => write(fmt(a) + '\n'), error: (...a) => process.stderr.write(fmt(a) + '\n') };
+      const src = sys.decode(n.data).replace(/^#!.*\n/, '\n');
+      try {
+        const AsyncFunction = Object.getPrototypeOf(async function () {}).constructor;
+        await new AsyncFunction('process', 'console', src)(process, console);
+      } catch (e) {
+        if (e instanceof Exit) code = e.code | 0;
+        else { await out; await sys.err(`${file}: ${e && e.stack ? String(e.stack).split('\n')[0] : e}\n`); return 1; }
+      }
+      await out;
+      return code;
+    },
+
     async help(sys) {
       await sys.out('Available commands: ' + Object.keys(cmds).sort().join(' ') + '\n'
         + 'The builtins (cd, echo, export, unset, env, pwd, exit) are minishell\'s own.\n');

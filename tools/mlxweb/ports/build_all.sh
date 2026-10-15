@@ -38,4 +38,14 @@ POSIX=1 $M/build.sh $S/minishell/minishell.wasm -Dmain=mlxweb_user_main -DMLXWEB
   -Iincludes -Ilibft -- $(sed -n '/^SRCS/,/^$/p' Makefile | grep -oE 'srcs/[^ \\]+\.c') libft/libft.a
 python3 $M/ports/minishell/pack_src.py . $S/minishell/src.json
 
+cd ~/work/webserv
+# C++98 + sockets/epoll/fork: POSIX=1 with the virtual network of posix.js (mlx_net.c).
+POSIX=1 $M/build.sh $S/webserv/webserv.wasm -std=c++98 -Iincludes -Iincludes/engine -Iincludes/response \
+  -Iincludes/server -Iincludes/utils -- $(pm FILES)
+# The site files: www/ and file/ from the repo, plus web.conf (www/config + a
+# /cgi-bin/ location) and the JavaScript CGI demos (no Python in the browser).
+WS_STAGE=$(mktemp -d)
+cp -r www file $WS_STAGE/ && cp -r $M/ports/webserv/cgi-bin $WS_STAGE/www/ && cp $M/ports/webserv/web.conf $WS_STAGE/
+python3 $M/pack.py $S/webserv/site $WS_STAGE web.conf www file
+
 cp $M/runtime.js $M/runtime-worker.js $S/mlxweb/

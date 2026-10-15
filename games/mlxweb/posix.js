@@ -9,7 +9,9 @@
  *   written in JS (see commands.js), keeping pid and file descriptors;
  * - pipes, dup/dup2, waitpid, kill and signal handlers (Ctrl-C, Ctrl-\);
  * - an in-memory file system and a terminal (xterm.js) with a line editor
- *   that serves readline() and canonical reads.
+ *   that serves readline() and canonical reads;
+ * - a virtual network: TCP-like sockets, accept/recv/send, epoll and
+ *   non-blocking fds. The page opens connections with sys.net.connect().
  *
  * Blocking calls (read, write to a full pipe, waitpid, readline, fork)
  * unwind the process with Asyncify; it resumes when it can continue.
@@ -20,10 +22,14 @@
   const enc = new TextEncoder();
   const dec = new TextDecoder();
   // WASI errno values
-  const E = { ACCES: 2, AGAIN: 6, BADF: 8, CHILD: 12, EXIST: 20, INVAL: 28, ISDIR: 31, MFILE: 33,
-    NOENT: 44, NOEXEC: 45, NOSYS: 52, NOTDIR: 54, NOTEMPTY: 55, NOTTY: 59, PIPE: 64, SPIPE: 70, SRCH: 71 };
+  const E = { ACCES: 2, ADDRINUSE: 3, AGAIN: 6, BADF: 8, CHILD: 12, CONNREFUSED: 14, EXIST: 20, INVAL: 28, ISDIR: 31, MFILE: 33,
+    NOENT: 44, NOEXEC: 45, NOSYS: 52, NOTCONN: 53, NOTDIR: 54, NOTEMPTY: 55, NOTSOCK: 57, NOTTY: 59, OPNOTSUPP: 58, PIPE: 64, SPIPE: 70, SRCH: 71 };
   const SIG = { INT: 2, QUIT: 3, KILL: 9, PIPE: 13, TERM: 15 };
   const PIPE_CAP = 64 * 1024;
+  const SOCK_CAP = 1024 * 1024;
+  const EP = { IN: 0x1, OUT: 0x4, ERR: 0x8, HUP: 0x10, RDHUP: 0x2000 };
+  const NONBLOCK = 0x4000;   // SOCK_NONBLOCK, accept4 flags
+  const MSG = { DONTWAIT: 0x40, NOSIGNAL: 0x4000 };
 
   class ProcExit { constructor(status) { this.status = status; } }
   class ExecReq { constructor(req) { this.req = req; } }
@@ -109,6 +115,12 @@
       return out;
     }
   }
+  // One direction of a connection: bytes queued until the other side reads.
+  class Stream {
+    constructor() { this.chunks = []; this.size = 0; this.wclosed = false; this.rclosed = false; }
+    push(b) { if (b.length) { this.chunks.push(b.slice()); this.size += b.length; } }
+  }
+  Stream.prototype.take = Pipe.prototype.take;
   // An open file description, shared by dup()/fork()
   class OFD {
     constructor(kind, props) { this.kind = kind; this.refs = 0; Object.assign(this, props); }
@@ -134,7 +146,7 @@
 
   function create(opts) {
     const fs = opts.fs || new FS();
-    const term = opts.term;
+    const term = opts.term || { write() {}, cols: 80 };
     const commands = opts.commands || {};
     const programs = opts.programs || {};   // name -> WebAssembly.Module
     const procs = new Map();
@@ -276,7 +288,9 @@
     }
     function unref(ofd) {
       ofd.refs--;
-      if (ofd.refs === 0 && ofd.pipe) notify();
+      if (ofd.refs > 0) return;
+      if (ofd.pipe) notify();
+      if (ofd.kind === 'sock') closeSock(ofd);
     }
     function allocFd(p, ofd, min = 0) {
       let fd = min;
@@ -404,6 +418,14 @@
         if (o.dev !== 'zero') crypto.getRandomValues(out);
         return { done: true, value: out };
       }
+      if (o.kind === 'sock') {
+        if (o.state !== 'conn') return { done: true, error: E.NOTCONN };
+        const rx = o.rx;
+        if (rx.size > 0) { notify(); return { done: true, value: rx.take(n) }; }
+        if (rx.wclosed || o.rdShut) return { done: true, value: new Uint8Array(0) };
+        return { done: false, wait: () => rx.size > 0 || rx.wclosed };
+      }
+      if (o.kind === 'sink') return { done: true, value: new Uint8Array(0) };
       if (o.kind === 'dir') return { done: true, error: E.ISDIR };
       return { done: true, error: E.BADF };
     }
@@ -425,6 +447,17 @@
         notify();
         return { done: true, value: chunk.length };
       }
+      if (o.kind === 'sock') {
+        if (o.state !== 'conn') return { done: true, error: E.NOTCONN };
+        const tx = o.tx;
+        if (tx.rclosed || tx.wclosed) return { done: true, error: E.PIPE, sigpipe: true };
+        const room = SOCK_CAP - tx.size;
+        if (room <= 0) return { done: false, wait: () => tx.size < SOCK_CAP || tx.rclosed };
+        tx.push(data.subarray(0, room));
+        notify();
+        return { done: true, value: Math.min(room, data.length) };
+      }
+      if (o.kind === 'sink') { o.sink(data); return { done: true, value: data.length }; }
       if (o.kind === 'file') {
         const n = o.node;
         if (o.append) o.pos = n.data.length;
@@ -473,13 +506,19 @@
           if (!ofd) return E.BADF;
           const v = view(p);
           const type = ofd.kind === 'tty' ? 2 : ofd.kind === 'file' ? 4 : ofd.kind === 'dir' ? 3 : 6;
-          v.setUint8(o, type); v.setUint16(o + 2, ofd.append ? 1 : 0, true);
+          v.setUint8(o, type); v.setUint16(o + 2, (ofd.append ? 1 : 0) | (ofd.nonblock ? 4 : 0), true);
           // a tty must not advertise seek/tell, or isatty() says no
           const rights = ofd.kind === 'tty' ? 0xffffffffffffffffn & ~0x24n : 0xffffffffffffffffn;
           v.setBigUint64(o + 8, rights, true); v.setBigUint64(o + 16, 0xffffffffffffffffn, true);
           return 0;
         },
-        fd_fdstat_set_flags() { return 0; },
+        fd_fdstat_set_flags(fd, flags) {
+          const ofd = p.fds.get(fd);
+          if (!ofd) return E.BADF;
+          ofd.nonblock = !!(flags & 4);
+          if (ofd.kind === 'file') ofd.append = !!(flags & 1);
+          return 0;
+        },
         fd_filestat_get(fd, o) {
           const ofd = p.fds.get(fd);
           if (!ofd) return E.BADF;
@@ -528,7 +567,7 @@
             let want = 0;
             for (let i = 0; i < n; i++) want += v.getUint32(iov + i * 8 + 4, true);
             const r = tryRead(p, o, want);
-            if (!r.done) return r;
+            if (!r.done) return o.nonblock ? { done: true, value: E.AGAIN } : r;
             if (r.error) return { done: true, value: r.error };
             let off = 0; const b = bytes(p);
             for (let i = 0; i < n && off < r.value.length; i++) {
@@ -553,7 +592,7 @@
             const data = parts.length === 1 ? parts[0] : concat(parts);
             if (data.length === 0) { v.setUint32(nw, 0, true); return { done: true, value: 0 }; }
             const r = tryWrite(p, o, data);
-            if (!r.done) return r;
+            if (!r.done) return o.nonblock ? { done: true, value: E.AGAIN } : r;
             if (r.sigpipe) { kill(p, SIG.PIPE); if (p.status === 'zombie') throw new ProcExit(p.exitStatus); }
             if (r.error) return { done: true, value: r.error };
             view(p).setUint32(nw, r.value, true);
@@ -744,10 +783,186 @@
           if (r && r.mode === 'readline') { r.buf = cstr(p, textPtr); r.pos = r.buf.length; }
         },
         rl_redisplay() { tty.redraw(); },
+        ...netFor(p),
         add_history(ptr) { const s = cstr(p, ptr); if (tty.history[tty.history.length - 1] !== s) tty.history.push(s); },
         clear_history() { tty.history = []; },
       };
     }
+
+    // ---------------- virtual network
+    const ports = new Map();   // port -> listening socket OFD
+    let nextEphemeral = 49152;
+    function closeSock(o) {
+      if (o.state === 'listen') {
+        if (ports.get(o.port) === o) ports.delete(o.port);
+        for (const c of o.queue) { c.tx.wclosed = true; c.rx.rclosed = true; }
+        o.queue = [];
+      } else if (o.state === 'conn') { o.tx.wclosed = true; o.rx.rclosed = true; }
+      o.state = 'closed';
+      notify();
+    }
+    function readiness(p, o) {
+      let ev = 0;
+      if (o.kind === 'sock') {
+        if (o.state === 'listen') { if (o.queue.length) ev |= EP.IN; }
+        else if (o.state === 'conn') {
+          if (o.rx.size > 0 || o.rx.wclosed) ev |= EP.IN;
+          if (o.rx.wclosed) ev |= EP.RDHUP;
+          if (o.tx.rclosed) ev |= EP.ERR | EP.HUP | EP.OUT;
+          else if (o.tx.size < SOCK_CAP) ev |= EP.OUT;
+          if (o.rx.wclosed && (o.tx.rclosed || o.tx.wclosed)) ev |= EP.HUP;
+        } else ev |= EP.HUP;
+      } else if (o.kind === 'pipe-r') {
+        if (o.pipe.size > 0) ev |= EP.IN;
+        if (o.pipe.writers === 0) ev |= EP.IN | EP.HUP;
+      } else if (o.kind === 'pipe-w') {
+        if (o.pipe.readers === 0) ev |= EP.OUT | EP.ERR;
+        else if (o.pipe.size < PIPE_CAP) ev |= EP.OUT;
+      } else if (o.kind === 'tty') {
+        ev |= EP.OUT;
+        if (tty.reader && tty.reader.proc === p && tty.reader.done) ev |= EP.IN;
+      } else ev |= EP.IN | EP.OUT;
+      return ev;
+    }
+    function epollReady(p, ep) {
+      const out = [];
+      for (const [fd, it] of ep.items) {
+        const o = p.fds.get(fd);
+        if (!o) continue;
+        const ev = readiness(p, o) & (it.events | EP.ERR | EP.HUP);
+        if (ev) out.push({ ev, it });
+      }
+      return out;
+    }
+    function netFor(p) {
+      const sockOf = (fd) => { const o = p.fds.get(fd); return !o ? -E.BADF : o.kind !== 'sock' ? -E.NOTSOCK : o; };
+      return {
+        socket(domain, type) {
+          return allocFd(p, new OFD('sock', { state: 'new', domain, nonblock: !!(type & NONBLOCK) }));
+        },
+        bind(fd, port) {
+          const o = sockOf(fd); if (typeof o === 'number') return o;
+          if (o.state !== 'new' || o.port) return -E.INVAL;
+          if (port && ports.has(port)) return -E.ADDRINUSE;
+          o.port = port || nextEphemeral++;
+          return 0;
+        },
+        listen(fd) {
+          const o = sockOf(fd); if (typeof o === 'number') return o;
+          if (o.state === 'listen') return 0;
+          if (o.state !== 'new') return -E.INVAL;
+          if (!o.port) o.port = nextEphemeral++;
+          if (ports.has(o.port)) return -E.ADDRINUSE;
+          o.state = 'listen'; o.queue = [];
+          ports.set(o.port, o);
+          if (opts.onListen) opts.onListen(o.port, p.pid);
+          return 0;
+        },
+        accept(fd, flags) {
+          return blocking(p, () => {
+            const o = sockOf(fd); if (typeof o === 'number') return { done: true, value: o };
+            if (o.state !== 'listen') return { done: true, value: -E.INVAL };
+            if (o.queue.length) {
+              const c = o.queue.shift();
+              const conn = new OFD('sock', { state: 'conn', rx: c.c2s, tx: c.s2c, port: o.port, peerPort: c.peerPort, nonblock: !!(flags & NONBLOCK) });
+              c.accepted = true;
+              notify();
+              return { done: true, value: allocFd(p, conn) };
+            }
+            if (o.nonblock) return { done: true, value: -E.AGAIN };
+            return { done: false, wait: () => o.queue.length > 0 || o.state !== 'listen' };
+          });
+        },
+        recv(fd, buf, len, flags) {
+          return blocking(p, () => {
+            const o = sockOf(fd); if (typeof o === 'number') return { done: true, value: o };
+            const r = tryRead(p, o, len);
+            if (!r.done) return (o.nonblock || (flags & MSG.DONTWAIT)) ? { done: true, value: -E.AGAIN } : r;
+            if (r.error) return { done: true, value: -r.error };
+            bytes(p).set(r.value, buf);
+            return { done: true, value: r.value.length };
+          });
+        },
+        send(fd, buf, len, flags) {
+          return blocking(p, () => {
+            const o = sockOf(fd); if (typeof o === 'number') return { done: true, value: o };
+            const r = tryWrite(p, o, bytes(p).slice(buf, buf + len));
+            if (!r.done) return (o.nonblock || (flags & MSG.DONTWAIT)) ? { done: true, value: -E.AGAIN } : r;
+            if (r.sigpipe && !(flags & MSG.NOSIGNAL)) { kill(p, SIG.PIPE); if (p.status === 'zombie') throw new ProcExit(p.exitStatus); }
+            if (r.error) return { done: true, value: -r.error };
+            return { done: true, value: r.value };
+          });
+        },
+        shutdown(fd, how) {
+          const o = sockOf(fd); if (typeof o === 'number') return o;
+          if (o.state !== 'conn') return -E.NOTCONN;
+          if (how & 1) o.rdShut = true;          // SHUT_RD
+          if (how & 2) { o.tx.wclosed = true; notify(); } // SHUT_WR
+          return 0;
+        },
+        sock_port(fd, peer) {
+          const o = sockOf(fd); if (typeof o === 'number') return o;
+          return (peer ? o.peerPort : o.port) || 0;
+        },
+        epoll_create() { return allocFd(p, new OFD('epoll', { items: new Map() })); },
+        epoll_ctl(epfd, op, fd, evPtr) {
+          const ep = p.fds.get(epfd);
+          if (!ep || ep.kind !== 'epoll' || !p.fds.has(fd)) return -E.BADF;
+          if (fd === epfd) return -E.INVAL;
+          const has = ep.items.has(fd);
+          if (op === 2) { if (!has) return -E.NOENT; ep.items.delete(fd); return 0; }
+          if (op === 1 && has) return -E.EXIST;
+          if (op === 3 && !has) return -E.NOENT;
+          if (op !== 1 && op !== 3) return -E.INVAL;
+          const v = view(p);
+          ep.items.set(fd, { events: v.getUint32(evPtr, true), lo: v.getUint32(evPtr + 8, true), hi: v.getUint32(evPtr + 12, true) });
+          notify();
+          return 0;
+        },
+        epoll_wait(epfd, evs, max, timeout) {
+          if (p.state !== 'rewinding' || !p.epollDeadline) p.epollDeadline = timeout < 0 ? Infinity : performance.now() + timeout;
+          return blocking(p, () => {
+            const ep = p.fds.get(epfd);
+            if (!ep || ep.kind !== 'epoll') { p.epollDeadline = 0; return { done: true, value: -E.BADF }; }
+            const ready = epollReady(p, ep);
+            const deadline = p.epollDeadline;
+            if (ready.length || performance.now() >= deadline) {
+              p.epollDeadline = 0;
+              const v = view(p), n = Math.min(max, ready.length);
+              for (let i = 0; i < n; i++) {
+                const { ev, it } = ready[i], o = evs + i * 16;
+                v.setUint32(o, ev, true); v.setUint32(o + 8, it.lo, true); v.setUint32(o + 12, it.hi, true);
+              }
+              return { done: true, value: n };
+            }
+            if (deadline !== Infinity) setTimeout(notify, Math.max(0, deadline - performance.now()) + 1);
+            return { done: false, wait: () => epollReady(p, ep).length > 0 || performance.now() >= deadline };
+          });
+        },
+      };
+    }
+    // The page's side of a connection to a listening port.
+    const net = {
+      ports,
+      connect(port) {
+        const l = ports.get(port);
+        if (!l || l.state !== 'listen') throw Object.assign(new Error('Connection refused'), { code: 'ECONNREFUSED' });
+        const c = { c2s: new Stream(), s2c: new Stream(), peerPort: nextEphemeral++, accepted: false };
+        l.queue.push(c);
+        notify();
+        return {
+          write(data) { if (!c.c2s.wclosed) { c.c2s.push(typeof data === 'string' ? enc.encode(data) : data); notify(); } },
+          async read() {
+            await until(null, () => c.s2c.size > 0 || c.s2c.wclosed);
+            return c.s2c.size > 0 ? c.s2c.take(c.s2c.size) : null;
+          },
+          hasData: () => c.s2c.size > 0,
+          get closed() { return c.s2c.wclosed && c.s2c.size === 0; },
+          end() { c.c2s.wclosed = true; notify(); },
+          close() { c.c2s.wclosed = true; c.s2c.rclosed = true; c.s2c.chunks = []; c.s2c.size = 0; notify(); },
+        };
+      },
+    };
 
     function putStrings(p, list, ptrs, buf) {
       const v = view(p), b = bytes(p);
@@ -908,8 +1123,11 @@
     }
 
     // ---------------- boot
-    async function spawnRoot(name, argv, env, cwd) {
-      const fds = new Map([[0, tty.ttyOfd], [1, tty.ttyOfd], [2, tty.ttyOfd]]);
+    async function spawnRoot(name, argv, env, cwd, stdio) {
+      // stdio: optional { stdout(bytes), stderr(bytes) } instead of the terminal
+      const sink = (f) => (f ? new OFD('sink', { sink: f }) : tty.ttyOfd);
+      const fds = new Map([[0, stdio ? new OFD('dev', { dev: 'null' }) : tty.ttyOfd],
+        [1, sink(stdio && stdio.stdout)], [2, sink(stdio && stdio.stderr)]]);
       const p = newProc(0, fds, cwd);
       p.root = true;
       await startWasm(p, programs[name], argv, env);
@@ -917,7 +1135,7 @@
     }
 
     return {
-      fs, tty, procs, spawnRoot,
+      fs, tty, procs, spawnRoot, net,
       input: (d) => tty.input(d),
       killAll() { for (const p of [...procs.values()]) { p.killed = SIG.KILL; exitProc(p, SIG.KILL); } procs.clear(); tty.reader = null; },
       set onSessionEnd(f) { onSessionEnd = f; },

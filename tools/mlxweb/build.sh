@@ -34,17 +34,28 @@ ASYNC=(--pass-arg=asyncify-imports@mlxweb.yield,mlxweb.fiber_switch)
 INC=(-I"$HERE/include")
 if [[ "${POSIX:-0}" == 1 ]]; then
   # Command-line programs run by posix.js: one instance per process.
-  EXTRA_SRC=("$HERE/mlx_posix.c")
+  EXTRA_SRC=("$HERE/mlx_posix.c" "$HERE/mlx_net.c")
   INC=(-I"$HERE/include-posix" -I"$HERE/include")
   LDFLAGS+=(-Wl,--export=__stack_pointer -Wl,--export-table)
-  ASYNC=(--pass-arg=asyncify-imports@posix.fork,posix.waitpid,posix.readline,wasi_snapshot_preview1.fd_read,wasi_snapshot_preview1.fd_write,wasi_snapshot_preview1.poll_oneoff)
+  ASYNC=(--pass-arg=asyncify-imports@posix.fork,posix.waitpid,posix.readline,posix.accept,posix.recv,posix.send,posix.epoll_wait,wasi_snapshot_preview1.fd_read,wasi_snapshot_preview1.fd_write,wasi_snapshot_preview1.poll_oneoff)
 fi
+# ASYNC_DIRECT=1: blocking calls are only reached by direct calls (smaller, faster)
+[[ "${ASYNC_DIRECT:-0}" == 1 ]] && ASYNC+=(--pass-arg=asyncify-ignore-indirect)
 COMMON=(--target=$TARGET --sysroot="$SYSROOT" -O2 "${INC[@]}"
   -D_WASI_EMULATED_SIGNAL -D_WASI_EMULATED_PROCESS_CLOCKS -D_WASI_EMULATED_GETPID
   -Wno-implicit-function-declaration -Wno-int-conversion -Wno-incompatible-pointer-types
   -Wno-unused-command-line-argument -Wno-deprecated-non-prototype)
 
-"$CC" "${COMMON[@]}" "${CFLAGS[@]}" "${EXTRA_SRC[@]}" "${SRCS[@]}" \
+# C++ sources (C++98 projects such as webserv): the shim stays C, linked with clang++.
+LINK="$CC"
+for s in "${SRCS[@]}"; do case "$s" in *.cpp|*.cc|*.cxx) LINK="$WASI/bin/clang++";; esac; done
+if [[ "$LINK" != "$CC" ]]; then
+  OBJS=()
+  for s in "${EXTRA_SRC[@]}"; do "$CC" "${COMMON[@]}" -c "$s" -o "$TMP/$(basename "$s").o"; OBJS+=("$TMP/$(basename "$s").o"); done
+  EXTRA_SRC=("${OBJS[@]}")
+  CFLAGS+=(-fno-exceptions)
+fi
+"$LINK" "${COMMON[@]}" "${CFLAGS[@]}" "${EXTRA_SRC[@]}" "${SRCS[@]}" \
   -lwasi-emulated-signal -lwasi-emulated-process-clocks -lwasi-emulated-getpid -lm \
   "${LDFLAGS[@]}" -o "$TMP/raw.wasm"
 
