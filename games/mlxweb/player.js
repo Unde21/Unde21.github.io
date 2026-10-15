@@ -36,7 +36,7 @@
       variants.forEach((v, i) => {
         const o = document.createElement('option');
         o.value = String(i);
-        o.textContent = v.label + (usable(v) ? '' : ' (indisponible ici)');
+        o.textContent = v.label + (usable(v) ? '' : ' (not available here)');
         o.disabled = !usable(v);
         variantSel.appendChild(o);
       });
@@ -76,10 +76,10 @@
     function showStart() {
       const v = variant();
       if (!usable(v)) {
-        setOverlay('error', 'Version indisponible ici', 'Cette version utilise des threads, qui demandent une page isolée (COOP/COEP). Elle fonctionne sur le site publié.', '');
+        setOverlay('error', 'Not available here', 'This version uses threads, which need a cross-origin isolated page (COOP/COEP). It works on the published site.', '');
         return;
       }
-      setOverlay('ready', cfg.title, v.pitch || cfg.pitch || '', 'Lancer la partie');
+      setOverlay('ready', cfg.title, v.pitch || cfg.pitch || '', 'Start the game');
     }
 
     function fitStage(w, h) {
@@ -96,7 +96,7 @@
     async function start() {
       stop();
       const v = variant();
-      setOverlay('loading', 'Chargement…', v.loadingText || 'Téléchargement du programme et de ses fichiers.', '');
+      setOverlay('loading', 'Loading…', v.loadingText || 'Downloading the program and its files.', '');
       barFill.style.width = '0%';
       if (logBox) logBox.textContent = '';
       try {
@@ -122,8 +122,8 @@
           onExit: (code, err) => {
             game = null;
             if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
-            if (err) setOverlay('error', 'Le programme s’est arrêté', String(err.message || err), 'Relancer');
-            else setOverlay('ended', 'Partie terminée', code === 0 ? 'Le programme a quitté normalement.' : 'Le programme a quitté avec le code ' + code + '.', 'Rejouer');
+            if (err) setOverlay('error', 'The program stopped', String(err.message || err), 'Restart');
+            else setOverlay('ended', 'Game over', code === 0 ? 'The program exited normally.' : 'The program exited with code ' + code + '.', 'Play again');
           },
         });
         window.currentGame = game;
@@ -132,7 +132,7 @@
       } catch (e) {
         console.error(e);
         game = null;
-        setOverlay('error', 'Impossible de lancer le jeu', String(e.message || e), 'Réessayer');
+        setOverlay('error', 'Could not start the game', String(e.message || e), 'Try again');
       }
     }
 
@@ -142,7 +142,7 @@
       soundBtn.addEventListener('click', () => {
         muted = !muted;
         soundBtn.setAttribute('aria-pressed', String(!muted));
-        soundBtn.textContent = muted ? 'Son coupé' : 'Son activé';
+        soundBtn.textContent = muted ? 'Sound off' : 'Sound on';
         if (game) game.setMuted(muted);
       });
     }

@@ -1,9 +1,9 @@
 <!doctype html>
-<html lang="fr">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Cub3D · Tournoi des Quatre Sorciers</title>
+<title>Cub3D · Four Wizards Tournament</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <script src="coi-serviceworker.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -14,11 +14,11 @@
 <body>
 <header class="bar">
   <div class="wrap">
-    <a class="back" href="index.html">← Projets</a>
+    <a class="back" href="index.html">← Projects</a>
     <h1>Cub3D</h1>
     <span class="label">C · raycasting · 17 threads</span>
     <span class="spacer"></span>
-    <a class="btn" href="https://github.com/Unde21/Cub3D" target="_blank" rel="noopener">Code sur GitHub</a>
+    <a class="btn" href="https://github.com/Unde21/Cub3D" target="_blank" rel="noopener">Code on GitHub</a>
   </div>
 </header>
 
@@ -29,56 +29,56 @@
       <select id="variant"></select>
     </div>
     <div class="field">
-      <label class="label" for="map">Carte (.cub)</label>
+      <label class="label" for="map">Map (.cub)</label>
       <select id="map"></select>
     </div>
     <span class="spacer"></span>
-    <button class="btn" id="sound" type="button" aria-pressed="true">Son activé</button>
-    <button class="btn" id="restart" type="button">Recommencer</button>
-    <button class="btn" id="fullscreen" type="button">Plein écran</button>
+    <button class="btn" id="sound" type="button" aria-pressed="true">Sound on</button>
+    <button class="btn" id="restart" type="button">Restart</button>
+    <button class="btn" id="fullscreen" type="button">Fullscreen</button>
   </div>
   <p class="note" id="variant-note"></p>
 
   <div class="stage" id="stage">
-    <canvas id="screen" tabindex="0" width="1920" height="1110" aria-label="Écran du jeu Cub3D"></canvas>
+    <canvas id="screen" tabindex="0" width="1920" height="1110" aria-label="Cub3D game screen"></canvas>
     <div class="overlay" id="overlay" data-state="ready">
       <h2 id="overlay-title">Cub3D</h2>
       <p id="overlay-text"></p>
       <div class="progress" id="progress" hidden><span></span></div>
-      <button class="btn primary" id="start" type="button">Lancer la partie</button>
+      <button class="btn primary" id="start" type="button">Start the game</button>
     </div>
   </div>
 
   <div class="about">
     <section>
-      <h3>Commandes</h3>
+      <h3>Controls</h3>
       <dl class="keys">
-        <dt><kbd data-code="KeyW">W</kbd><kbd data-code="KeyA">A</kbd><kbd data-code="KeyS">S</kbd><kbd data-code="KeyD">D</kbd></dt><dd>Se déplacer</dd>
-        <dt><kbd>Souris</kbd></dt><dd>Regarder autour. Clique dans le jeu pour capturer la souris</dd>
-        <dt><kbd data-code="KeyQ">Q</kbd><kbd data-code="KeyE">E</kbd></dt><dd>Tourner au clavier</dd>
-        <dt><kbd>←</kbd><kbd>→</kbd><kbd>Entrée</kbd></dt><dd>Choisir dans les menus (coalition, main)</dd>
-        <dt><kbd>1</kbd><kbd>2</kbd><kbd>3</kbd><kbd>4</kbd></dt><dd>Lancer les sorts équipés</dd>
-        <dt><kbd data-code="KeyZ">Z</kbd><kbd data-code="KeyX">X</kbd><kbd data-code="KeyC">C</kbd><kbd data-code="KeyV">V</kbd></dt><dd>Boire une potion</dd>
-        <dt><kbd>N</kbd></dt><dd>Grimoire : choisir ses sorts</dd>
-        <dt><kbd>M</kbd></dt><dd>Carte (molette ou <kbd>1</kbd> <kbd>2</kbd> pour zoomer)</dd>
-        <dt><kbd>Tab</kbd></dt><dd>Pause et sensibilité de la souris</dd>
-        <dt><kbd>Maj</kbd><kbd>Ctrl</kbd></dt><dd>Courir, s’accroupir</dd>
-        <dt><kbd>Molette</kbd></dt><dd>Changer de baguette</dd>
-        <dt><kbd>Échap</kbd></dt><dd>Fermer la carte ou le grimoire. Sur l’écran des coalitions, quitte le jeu</dd>
+        <dt><kbd data-code="KeyW">W</kbd><kbd data-code="KeyA">A</kbd><kbd data-code="KeyS">S</kbd><kbd data-code="KeyD">D</kbd></dt><dd>Move</dd>
+        <dt><kbd>Mouse</kbd></dt><dd>Look around. Click in the game to capture the mouse</dd>
+        <dt><kbd data-code="KeyQ">Q</kbd><kbd data-code="KeyE">E</kbd></dt><dd>Turn with the keyboard</dd>
+        <dt><kbd>←</kbd><kbd>→</kbd><kbd>Enter</kbd></dt><dd>Choose in the menus (coalition, hand)</dd>
+        <dt><kbd>1</kbd><kbd>2</kbd><kbd>3</kbd><kbd>4</kbd></dt><dd>Cast the equipped spells</dd>
+        <dt><kbd data-code="KeyZ">Z</kbd><kbd data-code="KeyX">X</kbd><kbd data-code="KeyC">C</kbd><kbd data-code="KeyV">V</kbd></dt><dd>Drink a potion</dd>
+        <dt><kbd>N</kbd></dt><dd>Spellbook: choose your spells</dd>
+        <dt><kbd>M</kbd></dt><dd>Map (wheel or <kbd>1</kbd> <kbd>2</kbd> to zoom)</dd>
+        <dt><kbd>Tab</kbd></dt><dd>Pause and mouse sensitivity</dd>
+        <dt><kbd>Shift</kbd><kbd>Ctrl</kbd></dt><dd>Run, crouch</dd>
+        <dt><kbd>Wheel</kbd></dt><dd>Switch wand</dd>
+        <dt><kbd>Esc</kbd></dt><dd>Close the map or the spellbook. On the coalition screen, quits the game</dd>
       </dl>
     </section>
     <section>
-      <h3>Le jeu</h3>
-      <p>Un raycaster façon Wolfenstein transformé en tournoi de sorciers : choisis ta coalition, explore le labyrinthe, ouvre les portes avec Lumos, voyage par le réseau de cheminées et affronte araignées, oiseaux et sorciers. Projet réalisé en binôme avec ale-guel.</p>
+      <h3>The game</h3>
+      <p>A Wolfenstein-style raycaster turned into a wizard tournament: pick your coalition, explore the maze, open doors with Lumos, travel through the fireplace network and fight spiders, birds and wizards. Two-person project.</p>
     </section>
     <section>
-      <h3>Sous le capot</h3>
-      <p>Le rendu est découpé entre 16 threads (ciel, sol, rayons, affichage) synchronisés par des barrières. Dans le navigateur, chaque pthread devient un Web Worker qui partage la mémoire du programme. Les sons, lancés à l’origine avec <code>fork</code> et <code>cvlc</code>, passent par l’audio du navigateur.</p>
+      <h3>Under the hood</h3>
+      <p>Rendering is split across 16 threads (sky, floor, rays, display) synchronised by barriers. In the browser, each pthread becomes a Web Worker sharing the program’s memory. Sounds, originally played with <code>fork</code> and <code>cvlc</code>, go through the browser’s audio.</p>
     </section>
   </div>
 
   <div class="field">
-    <span class="label">Sortie du programme</span>
+    <span class="label">Program output</span>
     <pre class="log" id="log"></pre>
   </div>
 </main>
@@ -91,7 +91,7 @@ Player.mount({
   size: [1920, 1110],
   variants: [
     {
-      label: 'Bonus : Tournoi des Quatre Sorciers',
+      label: 'Bonus: Four Wizards Tournament',
       wasm: 'games/cub3d/cub3d_bonus.wasm',
       singleCoreWasm: 'games/cub3d/cub3d_bonus_st.wasm',
       assets: 'games/cub3d/bonus',
@@ -101,32 +101,32 @@ Player.mount({
       mouseSpeed: 20,
       budgetMs: 14,
       soundBase: 'games/cub3d/',
-      pitch: 'Environ 40 Mo de textures à télécharger au premier lancement.',
-      loadingText: 'Téléchargement des textures (environ 40 Mo).',
-      note: 'Version complète avec sorts, ennemis, sons et menus. Un ordinateur récent est conseillé.',
+      pitch: 'About 40 MB of textures to download on first launch.',
+      loadingText: 'Downloading textures (about 40 MB).',
+      note: 'Full version with spells, enemies, sound and menus. A recent computer is recommended.',
       maps: [
-        { label: 'Le Tournoi (carte complète)', path: 'maps/bonus/valid/1.cub' },
-        { label: 'Château des cheminées', path: 'maps/bonus/valid/map_bonus.cub' },
-        { label: 'Couloirs aux portes', path: 'maps/bonus/valid/fun_map.cub' },
-        { label: 'Grand labyrinthe', path: 'maps/bonus/valid/maze_map.cub' },
-        { label: 'Salle des portes', path: 'maps/bonus/valid/door_map.cub' },
-        { label: 'Petite salle (test)', path: 'maps/bonus/valid/small_map.cub' },
+        { label: 'The Tournament (full map)', path: 'maps/bonus/valid/1.cub' },
+        { label: 'Fireplace castle', path: 'maps/bonus/valid/map_bonus.cub' },
+        { label: 'Corridors and doors', path: 'maps/bonus/valid/fun_map.cub' },
+        { label: 'Great maze', path: 'maps/bonus/valid/maze_map.cub' },
+        { label: 'Door room', path: 'maps/bonus/valid/door_map.cub' },
+        { label: 'Small room (test)', path: 'maps/bonus/valid/small_map.cub' },
       ],
     },
     {
-      label: 'Partie obligatoire',
+      label: 'Mandatory part',
       wasm: 'games/cub3d/cub3d.wasm',
       assets: 'games/cub3d/data',
       program: 'cub3D',
       mouse: 'relative',
       mouseSpeed: 5,
       budgetMs: 12,
-      pitch: 'Le raycaster du sujet : murs texturés par orientation, mini-carte.',
-      note: 'Le sujet de base : quatre textures de murs, couleurs de sol et de plafond, mini-carte.',
+      pitch: 'The subject’s raycaster: walls textured by orientation, minimap.',
+      note: 'The core subject: four wall textures, floor and ceiling colours, minimap.',
       maps: [
-        { label: 'Labyrinthe', path: 'maps/mandatory/valid/maze_map.cub' },
-        { label: 'Petite carte', path: 'maps/mandatory/valid/small_map.cub' },
-        { label: 'Couloirs', path: 'maps/t1.cub' },
+        { label: 'Maze', path: 'maps/mandatory/valid/maze_map.cub' },
+        { label: 'Small map', path: 'maps/mandatory/valid/small_map.cub' },
+        { label: 'Corridors', path: 'maps/t1.cub' },
       ],
     },
   ],

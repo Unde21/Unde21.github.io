@@ -1,9 +1,9 @@
 <!doctype html>
-<html lang="fr">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Philosophers · Le dîner des philosophes</title>
+<title>Philosophers · The dining philosophers</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Big+Shoulders+Display:wght@700;800&family=Martian+Mono:wght@400;500;600&display=swap">
@@ -57,18 +57,18 @@
   .legend li { display: flex; align-items: center; gap: 0.4rem; }
   .legend i { width: 0.8rem; height: 0.8rem; border-radius: 50%; display: inline-block; }
   .side .log { max-height: none; height: clamp(14rem, 34vw, 30rem); }
-  .side .log:empty::before { content: "Chaque ligne affichée par le programme apparaît ici, avec son horodatage en ms."; }
+  .side .log:empty::before { content: "Every line printed by the program shows up here, with its timestamp in ms."; }
   @media (max-width: 860px) { .sim { grid-template-columns: 1fr; } .side .log { height: 16rem; } }
 </style>
 </head>
 <body>
 <header class="bar">
   <div class="wrap">
-    <a class="back" href="index.html">← Projets</a>
+    <a class="back" href="index.html">← Projects</a>
     <h1>Philosophers</h1>
-    <span class="label">C · pthreads · mutex · sémaphores</span>
+    <span class="label">C · pthreads · mutex · semaphores</span>
     <span class="spacer"></span>
-    <a class="btn" href="https://github.com/Unde21/Philosophers" target="_blank" rel="noopener">Code sur GitHub</a>
+    <a class="btn" href="https://github.com/Unde21/Philosophers" target="_blank" rel="noopener">Code on GitHub</a>
   </div>
 </header>
 
@@ -77,12 +77,12 @@
     <div class="field">
       <label class="label" for="version">Version</label>
       <select id="version">
-        <option value="philo">Obligatoire : threads et mutex</option>
-        <option value="philo_bonus">Bonus : processus et sémaphores</option>
+        <option value="philo">Mandatory: threads and mutexes</option>
+        <option value="philo_bonus">Bonus: processes and semaphores</option>
       </select>
     </div>
     <div class="field">
-      <label class="label" for="n">Philosophes</label>
+      <label class="label" for="n">Philosophers</label>
       <input id="n" type="number" min="1" max="200" value="5" required>
     </div>
     <div class="field">
@@ -98,40 +98,40 @@
       <input id="sleep" type="number" min="60" value="200" required>
     </div>
     <div class="field">
-      <label class="label" for="meals">Repas (optionnel)</label>
+      <label class="label" for="meals">Meals (optional)</label>
       <input id="meals" type="number" min="1" placeholder="—">
     </div>
     <span class="spacer" style="flex:1"></span>
-    <button class="btn primary" id="run" type="submit">Lancer</button>
-    <button class="btn" id="stop" type="button" disabled>Arrêter</button>
+    <button class="btn primary" id="run" type="submit">Run</button>
+    <button class="btn" id="stop" type="button" disabled>Stop</button>
   </form>
-  <div class="presets" id="presets" aria-label="Exemples">
-    <button class="chip" type="button" data-args="4 410 200 200">Personne ne meurt <b>4 410 200 200</b></button>
-    <button class="chip" type="button" data-args="4 310 200 100">Un philosophe meurt <b>4 310 200 100</b></button>
-    <button class="chip" type="button" data-args="5 800 200 200 7">Fin après 7 repas <b>5 800 200 200 7</b></button>
-    <button class="chip" type="button" data-args="1 800 200 200">Seul avec une fourchette <b>1 800 200 200</b></button>
-    <button class="chip" type="button" data-args="200 800 200 200">200 philosophes <b>200 800 200 200</b></button>
+  <div class="presets" id="presets" aria-label="Examples">
+    <button class="chip" type="button" data-args="4 410 200 200">Nobody dies <b>4 410 200 200</b></button>
+    <button class="chip" type="button" data-args="4 310 200 100">A philosopher dies <b>4 310 200 100</b></button>
+    <button class="chip" type="button" data-args="5 800 200 200 7">Ends after 7 meals <b>5 800 200 200 7</b></button>
+    <button class="chip" type="button" data-args="1 800 200 200">Alone with one fork <b>1 800 200 200</b></button>
+    <button class="chip" type="button" data-args="200 800 200 200">200 philosophers <b>200 800 200 200</b></button>
   </div>
   <p class="cmd" id="cmd"></p>
   <p class="note" id="version-note"></p>
 
   <div class="sim">
     <div class="stage" id="stage">
-      <canvas id="table" width="1000" height="1000" aria-label="Table des philosophes"></canvas>
+      <canvas id="table" width="1000" height="1000" aria-label="The philosophers’ table"></canvas>
     </div>
     <div class="side">
       <dl class="stats">
-        <div><dt>Temps</dt><dd id="s-time">0 ms</dd></div>
-        <div><dt>État</dt><dd id="s-state">Prêt</dd></div>
-        <div><dt>Repas servis</dt><dd id="s-meals">0</dd></div>
-        <div><dt>Repas min. / philo</dt><dd id="s-min">0</dd></div>
+        <div><dt>Time</dt><dd id="s-time">0 ms</dd></div>
+        <div><dt>State</dt><dd id="s-state">Ready</dd></div>
+        <div><dt>Meals served</dt><dd id="s-meals">0</dd></div>
+        <div><dt>Min. meals / philo</dt><dd id="s-min">0</dd></div>
       </dl>
       <ul class="legend">
-        <li><i style="background:var(--think)"></i>pense</li>
-        <li><i style="background:var(--fork)"></i>a une fourchette</li>
-        <li><i style="background:var(--eat)"></i>mange</li>
-        <li><i style="background:var(--sleep)"></i>dort</li>
-        <li><i style="background:var(--dead)"></i>mort</li>
+        <li><i style="background:var(--think)"></i>thinking</li>
+        <li><i style="background:var(--fork)"></i>has a fork</li>
+        <li><i style="background:var(--eat)"></i>eating</li>
+        <li><i style="background:var(--sleep)"></i>sleeping</li>
+        <li><i style="background:var(--dead)"></i>dead</li>
       </ul>
       <pre class="log" id="log"></pre>
     </div>
@@ -139,16 +139,16 @@
 
   <div class="about">
     <section>
-      <h3>Le problème</h3>
-      <p>Des philosophes sont assis autour d’une table et doivent prendre deux fourchettes pour manger. Personne ne doit mourir de faim plus de <code>time_to_die</code> ms après son dernier repas. Partie obligatoire : un thread par philosophe et un mutex par fourchette, posée entre deux assiettes. Bonus : un processus par philosophe, et les fourchettes forment un tas au centre, compté par un sémaphore.</p>
+      <h3>The problem</h3>
+      <p>Philosophers sit around a table and need two forks to eat. Nobody may go more than <code>time_to_die</code> ms without a meal. Mandatory part: one thread per philosopher and one mutex per fork, placed between two plates. Bonus: one process per philosopher, and the forks are a pile in the middle, counted by a semaphore.</p>
     </section>
     <section>
-      <h3>Ce que tu vois</h3>
-      <p>Le programme tourne vraiment : la table est dessinée à partir de ce qu’il affiche (« 200 3 is eating »). Dans la partie obligatoire, les fourchettes se déplacent vers le philosophe qui les prend, dans l’ordre choisi par le code pour éviter l’interblocage. Dans le bonus, elles partent du tas central.</p>
+      <h3>What you see</h3>
+      <p>The program really runs: the table is drawn from what it prints (“200 3 is eating”). In the mandatory part, forks move to the philosopher who takes them, in the order the code uses to avoid deadlock. In the bonus, they come from the central pile.</p>
     </section>
     <section>
-      <h3>Sous le capot</h3>
-      <p>Le code C est compilé en WebAssembly et s’exécute dans un Web Worker. Les pthreads y deviennent des fibres coopératives : chaque <code>usleep()</code>, mutex ou sémaphore passe la main au suivant, avec la vraie horloge. Pour le bonus, <code>fork()</code> lance un « processus » de fibres, que <code>kill()</code> arrête ; les sémaphores nommés sont émulés.</p>
+      <h3>Under the hood</h3>
+      <p>The C code is compiled to WebAssembly and runs in a Web Worker. Pthreads become cooperative fibers there: each <code>usleep()</code>, mutex or semaphore hands over to the next one, on the real clock. For the bonus, <code>fork()</code> starts a “process” of fibers that <code>kill()</code> stops; named semaphores are emulated.</p>
     </section>
   </div>
 </main>
@@ -177,8 +177,8 @@
     const bin = $('version').value === 'philo_bonus' ? './philo_bonus' : './philo';
     $('cmd').innerHTML = '$ <b>' + bin + ' ' + args().join(' ') + '</b>';
     $('version-note').textContent = $('version').value === 'philo_bonus'
-      ? 'Chaque philosophe est un processus avec son propre thread superviseur ; fourchettes, affichage et fin de partie passent par des sémaphores nommés.'
-      : 'Chaque philosophe est un thread ; chaque fourchette est protégée par un mutex.';
+      ? 'Each philosopher is a process with its own monitor thread; forks, printing and the end of the simulation go through named semaphores.'
+      : 'Each philosopher is a thread; each fork is protected by a mutex.';
   }
   fields.forEach((f) => f.addEventListener('input', showCmd));
   $('version').addEventListener('change', () => { showCmd(); if (worker) start(); });
@@ -261,7 +261,7 @@
       }
       ctx.fillStyle = color('--stage-ink'); ctx.globalAlpha = 0.75; ctx.textAlign = 'center';
       ctx.font = '500 18px "Martian Mono", monospace';
-      ctx.fillText(free + ' / ' + n + ' fourchettes libres', cx, cy + 175);
+      ctx.fillText(free + ' / ' + n + ' forks free', cx, cy + 175);
       ctx.globalAlpha = 1;
       if (sim) sim.philos.forEach((p, i) => {
         for (let k = 0; k < p.forks; k++) {
@@ -300,7 +300,7 @@
           const off = R * 1.22 + plate * 0.5 + 14, c = Math.cos(a);
           const ox = cx + c * off, oy = cy + Math.sin(a) * (off + 8);
           ctx.textAlign = c > 0.35 ? 'left' : c < -0.35 ? 'right' : 'center';
-          ctx.fillText(p.meals + ' repas', ox, oy);
+          ctx.fillText(p.meals + (p.meals === 1 ? ' meal' : ' meals'), ox, oy);
         }
       }
     }
@@ -310,7 +310,7 @@
     ctx.fillText(sim ? sim.time + ' ms' : './philo', cx, cy - 10);
     ctx.font = '500 20px "Martian Mono", monospace';
     ctx.globalAlpha = 0.7;
-    ctx.fillText(sim ? (sim.status === 'dead' ? 'philosophe ' + (sim.dead + 1) + ' est mort' : sim.status === 'done' ? 'simulation terminée' : n + ' philosophes') : 'choisis des paramètres', cx, cy + 44);
+    ctx.fillText(sim ? (sim.status === 'dead' ? 'philosopher ' + (sim.dead + 1) + ' died' : sim.status === 'done' ? 'simulation over' : n + (n === 1 ? ' philosopher' : ' philosophers')) : 'pick some parameters', cx, cy + 44);
     ctx.globalAlpha = 1;
   }
 
@@ -322,7 +322,7 @@
       $('s-min').textContent = String(sim.philos.reduce((m, p) => Math.min(m, p.meals), Infinity));
       const st = $('s-state');
       st.className = sim.status === 'dead' ? 'state-dead' : sim.status === 'done' ? 'state-done' : '';
-      st.textContent = { run: 'En cours', dead: 'Mort', done: 'Terminé', error: 'Erreur', stopped: 'Arrêté' }[sim.status];
+      st.textContent = { run: 'Running', dead: 'Dead', done: 'Done', error: 'Error', stopped: 'Stopped' }[sim.status];
       if (pendingLog.length) {
         sim.lines.push(...pendingLog); pendingLog = [];
         if (sim.lines.length > 400) sim.lines.splice(0, sim.lines.length - 400);
@@ -359,7 +359,7 @@
         if (sim.status === 'run') sim.status = m.code === 0 ? 'done' : 'error';
         stop();
       } else if (m.cmd === 'error') {
-        pendingLog.push('erreur : ' + m.message.split('\n')[0]);
+        pendingLog.push('error: ' + m.message.split('\n')[0]);
         sim.status = 'error'; stop();
       }
     };

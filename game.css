@@ -75,4 +75,4 @@
   padding: 0.75rem 0.9rem; margin: 0;
   max-height: 9rem; overflow: auto; white-space: pre-wrap;
 }
-.log:empty::before { content: "La sortie du programme (stdout) s’affichera ici."; opacity: 0.55; }
+.log:empty::before { content: "The program’s output (stdout) will show up here."; opacity: 0.55; }

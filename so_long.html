@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="fr">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -13,56 +13,56 @@
 <body>
 <header class="bar">
   <div class="wrap">
-    <a class="back" href="index.html">← Projets</a>
+    <a class="back" href="index.html">← Projects</a>
     <h1>so_long</h1>
     <span class="label">C · MiniLibX · 2D</span>
     <span class="spacer"></span>
-    <a class="btn" href="https://github.com/Unde21/So_long" target="_blank" rel="noopener">Code sur GitHub</a>
+    <a class="btn" href="https://github.com/Unde21/So_long" target="_blank" rel="noopener">Code on GitHub</a>
   </div>
 </header>
 
 <main class="wrap play">
   <div class="toolbar">
     <div class="field">
-      <label class="label" for="map">Carte (.ber)</label>
+      <label class="label" for="map">Map (.ber)</label>
       <select id="map"></select>
     </div>
     <span class="spacer"></span>
-    <button class="btn" id="restart" type="button">Recommencer</button>
-    <button class="btn" id="fullscreen" type="button">Plein écran</button>
+    <button class="btn" id="restart" type="button">Restart</button>
+    <button class="btn" id="fullscreen" type="button">Fullscreen</button>
   </div>
 
   <div class="stage pixel" id="stage">
-    <canvas id="screen" tabindex="0" width="1664" height="704" aria-label="Écran du jeu so_long"></canvas>
+    <canvas id="screen" tabindex="0" width="1664" height="704" aria-label="so_long game screen"></canvas>
     <div class="overlay" id="overlay" data-state="ready">
       <h2 id="overlay-title">so_long</h2>
       <p id="overlay-text"></p>
       <div class="progress" id="progress" hidden><span></span></div>
-      <button class="btn primary" id="start" type="button">Lancer la partie</button>
+      <button class="btn primary" id="start" type="button">Start the game</button>
     </div>
   </div>
 
   <div class="about">
     <section>
-      <h3>Commandes</h3>
+      <h3>Controls</h3>
       <dl class="keys">
-        <dt><kbd data-code="KeyW">W</kbd><kbd data-code="KeyA">A</kbd><kbd data-code="KeyS">S</kbd><kbd data-code="KeyD">D</kbd></dt><dd>Se déplacer</dd>
-        <dt><kbd>F</kbd></dt><dd>Lancer un Kamehameha sur Cell</dd>
-        <dt><kbd>Échap</kbd></dt><dd>Quitter la partie</dd>
+        <dt><kbd data-code="KeyW">W</kbd><kbd data-code="KeyA">A</kbd><kbd data-code="KeyS">S</kbd><kbd data-code="KeyD">D</kbd></dt><dd>Move</dd>
+        <dt><kbd>F</kbd></dt><dd>Fire a Kamehameha at Cell</dd>
+        <dt><kbd>Esc</kbd></dt><dd>Quit the game</dd>
       </dl>
     </section>
     <section>
-      <h3>Le jeu</h3>
-      <p>Goku ramasse toutes les boules de cristal de la carte, puis rejoint son vaisseau pour s’enfuir. Cell patrouille et tire des rayons ; il faut le toucher cinq fois pour l’abattre. Le compteur de pas s’affiche en bas à gauche.</p>
+      <h3>The game</h3>
+      <p>Goku collects every crystal ball on the map, then reaches his spaceship to escape. Cell patrols and fires beams; hit him five times to take him down. The step counter is shown in the bottom left corner.</p>
     </section>
     <section>
-      <h3>Sous le capot</h3>
-      <p>Le code C du dépôt est compilé tel quel en WebAssembly. Seule la MiniLibX change : une réimplémentation qui dessine dans un canvas et reçoit le clavier du navigateur. Les cartes et les sprites XPM sont lus depuis un petit système de fichiers en mémoire.</p>
+      <h3>Under the hood</h3>
+      <p>The C code from the repository is compiled to WebAssembly as is. Only the MiniLibX changes: a reimplementation that draws to a canvas and takes the browser’s keyboard input. Maps and XPM sprites are read from a small in-memory file system.</p>
     </section>
   </div>
 
   <div class="field">
-    <span class="label">Sortie du programme</span>
+    <span class="label">Program output</span>
     <pre class="log" id="log"></pre>
   </div>
 </main>
@@ -80,11 +80,11 @@ Player.mount({
     program: 'so_long_bonus',
     loopRate: 100000,
     screen: [7680, 4320],
-    pitch: 'Ramasse les boules de cristal et échappe à Cell.',
+    pitch: 'Collect the crystal balls and escape from Cell.',
     maps: [
-      { label: '42 — la carte de l’école', path: 'map/42_map.ber' },
-      { label: 'Salle des tests (26 × 37)', path: 'map/test_map.ber' },
-      { label: 'Forêt géante (60 × 31)', path: 'map/FF_map.ber' },
+      { label: '42 — the school map', path: 'map/42_map.ber' },
+      { label: 'Test room (26 × 37)', path: 'map/test_map.ber' },
+      { label: 'Giant forest (60 × 31)', path: 'map/FF_map.ber' },
     ],
   }],
 });

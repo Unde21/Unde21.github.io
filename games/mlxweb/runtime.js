@@ -559,7 +559,7 @@
     const imports = { wasi_snapshot_preview1: wasiProxy, mlxweb, wasi: { 'thread-spawn': threadSpawn } };
     if (needsMemory) {
       if (typeof SharedArrayBuffer === 'undefined' || !self.crossOriginIsolated) {
-        throw new Error('Ce programme utilise des threads : la page doit être cross-origin isolated (COOP/COEP).');
+        throw new Error('This program uses threads: the page must be cross-origin isolated (COOP/COEP).');
       }
       mem = new WebAssembly.Memory({ initial: opts.initialPages || 1024, maximum: 32768, shared: true });
       imports.env = { memory: mem };
