@@ -110,6 +110,7 @@
           budgetMs: v.budgetMs || 10,
           mouse: v.mouse || 'absolute',
           mouseSpeed: v.mouseSpeed || 1,
+          onKeyLayout: learnKey,
           threads: isolated ? v.threads || 0 : 0,
           workerUrl: cfg.workerUrl || 'games/mlxweb/runtime-worker.js',
           soundBase: v.soundBase || '',
@@ -156,16 +157,27 @@
     localizeKeys();
   }
 
-  // Keys follow their physical position (WASD on QWERTY = ZQSD on AZERTY):
-  // show each key with the label of the visitor's own layout when known.
+  // Gameplay keys (data-code) follow their physical position: show each one
+  // with the label of the visitor's own layout. Chrome/Edge tell us the layout
+  // directly; elsewhere we guess from the language, then learn from key presses.
+  const AZERTY = { KeyQ: 'A', KeyW: 'Z', KeyA: 'Q', KeyZ: 'W' };
+  function setLabel(code, label) {
+    document.querySelectorAll('kbd[data-code="' + code + '"]').forEach((k) => { k.textContent = label; });
+  }
   function localizeKeys() {
-    if (!navigator.keyboard || !navigator.keyboard.getLayoutMap) return;
-    navigator.keyboard.getLayoutMap().then((map) => {
-      document.querySelectorAll('kbd[data-code]').forEach((k) => {
-        const label = map.get(k.dataset.code);
-        if (label) k.textContent = label.toUpperCase();
-      });
-    }).catch(() => {});
+    const lang = (navigator.language || '').toLowerCase();
+    if (/^fr(-(fr|be|lu|mc))?$/.test(lang)) Object.entries(AZERTY).forEach(([c, l]) => setLabel(c, l));
+    if (navigator.keyboard && navigator.keyboard.getLayoutMap) {
+      navigator.keyboard.getLayoutMap().then((map) => {
+        document.querySelectorAll('kbd[data-code]').forEach((k) => {
+          const label = map.get(k.dataset.code);
+          if (label) k.textContent = label.toUpperCase();
+        });
+      }).catch(() => {});
+    }
+  }
+  function learnKey(code, key) {
+    if (/^Key[A-Z]$/.test(code) && key && key.length === 1 && /\p{L}/u.test(key)) setLabel(code, key.toUpperCase());
   }
 
   window.Player = { mount };
