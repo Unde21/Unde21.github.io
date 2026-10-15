@@ -24,10 +24,10 @@ THREADS=1 $M/build.sh $S/cub3d/cub3d_bonus.wasm "${CF[@]}" -Iincludes/header_bon
 FIBERS=1 $M/build.sh $S/cub3d/cub3d_bonus_st.wasm "${CF[@]}" -Iincludes/header_bonus -- $FB $M/ports/cub3d/sound_init_web.c $LIBS
 
 cd ~/work/Philosophers/philo
-FIBERS=1 $M/build.sh $S/philosophers/philo.wasm -Iincludes -- srcs/*.c
+FIBERS=1 $M/build.sh $S/philosophers/philo.wasm -DFIBER_STACK=65536 -DFIBER_ABUF=16384 -Iincludes -- srcs/*.c
 cd ~/work/Philosophers/philo_bonus
 # fork() -> mlxweb_spawn() in a web copy of init_child_bonus.c; exit() ends only the calling "process"
-FIBERS=1 $M/build.sh $S/philosophers/philo_bonus.wasm -Dexit=mlxweb_exit -Iincludes -- \
+FIBERS=1 $M/build.sh $S/philosophers/philo_bonus.wasm -Dexit=mlxweb_exit -DFIBER_STACK=65536 -DFIBER_ABUF=16384 -Iincludes -- \
   $(ls srcs_bonus/*.c | grep -v init_child_bonus.c) $M/ports/philosophers/init_child_web.c
 
 cp $M/runtime.js $M/runtime-worker.js $S/mlxweb/

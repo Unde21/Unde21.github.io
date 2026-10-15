@@ -26,9 +26,14 @@ void	js_fiber_switch(void);
 __attribute__((import_module("mlxweb"), import_name("now")))
 double	js_now(void);
 
-#define MAX_FIBERS 260
-#define FIBER_STACK (256 * 1024)
-#define FIBER_ABUF (64 * 1024)
+/* Sizes can be tuned per program with -DFIBER_STACK=... at build time. */
+#define MAX_FIBERS 1024
+#ifndef FIBER_STACK
+# define FIBER_STACK (256 * 1024)
+#endif
+#ifndef FIBER_ABUF
+# define FIBER_ABUF (64 * 1024)
+#endif
 
 enum { F_FREE, F_NEW, F_READY, F_DONE };
 
