@@ -445,8 +445,8 @@
       return r === 0 ? 1 : 0;
     },
     async help(sys) {
-      await sys.out('Commandes disponibles : ' + Object.keys(cmds).sort().join(' ') + '\n'
-        + 'Les builtins (cd, echo, export, unset, env, pwd, exit) sont ceux de minishell.\n');
+      await sys.out('Available commands: ' + Object.keys(cmds).sort().join(' ') + '\n'
+        + 'The builtins (cd, echo, export, unset, env, pwd, exit) are minishell\'s own.\n');
       return 0;
     },
   };

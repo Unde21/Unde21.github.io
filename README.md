@@ -1,47 +1,46 @@
 # Portfolio — samaouch (42 Lyon)
 
-Site statique (GitHub Pages) qui présente mes projets 42 et les rend jouables dans le navigateur.
+A static site (GitHub Pages) that presents my 42 projects and makes them playable in the browser.
 
-- `index.html` : page d'accueil
-- `so_long.html`, `cub3d.html` : pages de jeu
-- `minishell.html` : terminal web (xterm.js) où tourne le vrai minishell
-- `philosophers.html` : simulation du dîner des philosophes (programme lancé dans un Web Worker par `games/mlxweb/wasi-worker.js`)
-- `games/` : programmes compilés en WebAssembly + leurs fichiers (cartes, textures, sons)
-- `coi-serviceworker.js` : active l'isolation cross-origin sur GitHub Pages (nécessaire aux threads de Cub3D bonus)
-- `tools/mlxweb/` : la couche de portage (MiniLibX pour canvas, runtime WASI, threads, sons) et les scripts de build
+- `index.html`: home page
+- `so_long.html`, `cub3d.html`: game pages
+- `minishell.html`: web terminal (xterm.js) running the real minishell
+- `philosophers.html`: dining philosophers simulation (the program runs in a Web Worker started by `games/mlxweb/wasi-worker.js`)
+- `games/`: programs compiled to WebAssembly, with their files (maps, textures, sounds)
+- `coi-serviceworker.js`: enables cross-origin isolation on GitHub Pages (needed by the Cub3D bonus threads)
+- `tools/mlxweb/`: the porting layer (MiniLibX for canvas, WASI runtime, threads, sound) and the build scripts
 
-## Mise en ligne
+## Publishing
 
-1. Créer un dépôt public nommé `Unde21.github.io`.
-2. Y pousser le contenu de ce dossier.
-3. Settings → Pages → Source : branche `main`, dossier `/ (root)`.
-4. Le site est servi sur https://unde21.github.io
+1. Create a public repository named `Unde21.github.io`.
+2. Push the contents of this folder to it.
+3. Settings → Pages → Source: branch `main`, folder `/ (root)`.
+4. The site is served at https://unde21.github.io
 
-## Comment le portage fonctionne
+## How the port works
 
-Le code C d'origine est compilé tel quel avec wasi-sdk. `tools/mlxweb/mlx_web.c` réimplémente
-l'API de la MiniLibX : fenêtres = canvas, images en mémoire, hooks X11 alimentés par le clavier
-et la souris du navigateur. `mlx_loop()` rend la main au navigateur à chaque image grâce à
-Asyncify (Binaryen). Les pthreads deviennent des Web Workers qui partagent la mémoire
-(wasi-threads). Les `.xpm` sont convertis par `pack.py` en un format indexé plus compact,
-lu par la même fonction `mlx_xpm_file_to_image`.
+The original C code is compiled as is with wasi-sdk. `tools/mlxweb/mlx_web.c` reimplements
+the MiniLibX API: windows are canvases, images live in memory, and X11 hooks are fed by the
+browser's keyboard and mouse. `mlx_loop()` hands control back to the browser every frame thanks
+to Asyncify (Binaryen). Pthreads become Web Workers sharing memory (wasi-threads). `.xpm` files
+are converted by `pack.py` into a more compact indexed format, read by the same
+`mlx_xpm_file_to_image` function.
 
-Seul fichier remplacé dans les projets : `Cub3D/srcs_bonus/game/sound/init.c`
-(`fork` + `cvlc` → audio du navigateur), voir `tools/mlxweb/ports/cub3d/`.
+The only file replaced in the projects: `Cub3D/srcs_bonus/game/sound/init.c`
+(`fork` + `cvlc` → browser audio), see `tools/mlxweb/ports/cub3d/`.
 
-Philosophers bonus : `fork()` est remplacé par `mlxweb_spawn()` dans une copie de
-`init_child_bonus.c` (`tools/mlxweb/ports/philosophers/`) ; `kill()`, `wait()`, `exit()` et les
-sémaphores nommés sont émulés par `tools/mlxweb/mlx_fibers.c`.
+Philosophers bonus: `fork()` is replaced by `mlxweb_spawn()` in a copy of
+`init_child_bonus.c` (`tools/mlxweb/ports/philosophers/`); `kill()`, `wait()`, `exit()` and
+named semaphores are emulated by `tools/mlxweb/mlx_fibers.c`.
 
-Minishell : compilé avec `POSIX=1`, chaque processus est une instance WebAssembly avec sa
-propre mémoire. `games/mlxweb/posix.js` fait office de noyau : `fork()` (copie de la mémoire
-et reprise via Asyncify), `execve`, `waitpid`, pipes, `dup2`, signaux, un système de fichiers
-en mémoire et un terminal avec éditeur de ligne (l'API readline est dans `tools/mlxweb/mlx_posix.c`).
-Les commandes de `/bin` (`ls`, `grep`, `sort`…) sont écrites en JavaScript dans
-`games/mlxweb/commands.js`. Aucun fichier de minishell n'est modifié.
+Minishell: built with `POSIX=1`, each process is a WebAssembly instance with its own memory.
+`games/mlxweb/posix.js` acts as the kernel: `fork()` (memory copy, resumed through Asyncify),
+`execve`, `waitpid`, pipes, `dup2`, signals, an in-memory file system and a terminal with a
+line editor (the readline API is in `tools/mlxweb/mlx_posix.c`). The commands in `/bin`
+(`ls`, `grep`, `sort`…) are written in JavaScript in `games/mlxweb/commands.js`. No minishell
+file is modified.
 
-Réglage propre à la version web : la sensibilité de la souris de Cub3D bonus démarre à 70 %
-de la barre du menu pause (`sensitivity = 110` au lieu de 175), appliqué au moment du build
-par `tools/mlxweb/ports/build_all.sh`.
+Web-only setting: the Cub3D bonus mouse sensitivity starts at 70 % of the pause-menu bar
+(`sensitivity = 110` instead of 175), applied at build time by `tools/mlxweb/ports/build_all.sh`.
 
-Rebuild : `tools/mlxweb/ports/build_all.sh` (wasi-sdk 25 + `npm i binaryen`).
+Rebuild: `tools/mlxweb/ports/build_all.sh` (wasi-sdk 25 + `npm i binaryen`).
