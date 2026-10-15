@@ -18,9 +18,10 @@
     --dead: #e5534b;
   }
   .params { display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: end; }
+  .field select { font: 500 0.9rem/1 var(--body); padding: 0.6em 0.8em; border-radius: var(--radius); border: 1px solid var(--line); background: var(--panel); color: var(--ink); max-width: 100%; }
   .field input {
     font: 500 0.95rem/1 var(--mono);
-    width: 7.5rem; max-width: 100%;
+    width: 6.2rem; max-width: 100%;
     padding: 0.55em 0.7em;
     border-radius: var(--radius);
     border: 1px solid var(--line);
@@ -65,7 +66,7 @@
   <div class="wrap">
     <a class="back" href="index.html">← Projets</a>
     <h1>Philosophers</h1>
-    <span class="label">C · pthreads · mutex</span>
+    <span class="label">C · pthreads · mutex · sémaphores</span>
     <span class="spacer"></span>
     <a class="btn" href="https://github.com/Unde21/Philosophers" target="_blank" rel="noopener">Code sur GitHub</a>
   </div>
@@ -73,6 +74,13 @@
 
 <main class="wrap play">
   <form class="params" id="params" novalidate>
+    <div class="field">
+      <label class="label" for="version">Version</label>
+      <select id="version">
+        <option value="philo">Obligatoire : threads et mutex</option>
+        <option value="philo_bonus">Bonus : processus et sémaphores</option>
+      </select>
+    </div>
     <div class="field">
       <label class="label" for="n">Philosophes</label>
       <input id="n" type="number" min="1" max="200" value="5" required>
@@ -105,6 +113,7 @@
     <button class="chip" type="button" data-args="200 410 200 200">200 philosophes <b>200 410 200 200</b></button>
   </div>
   <p class="cmd" id="cmd"></p>
+  <p class="note" id="version-note"></p>
 
   <div class="sim">
     <div class="stage" id="stage">
@@ -131,15 +140,15 @@
   <div class="about">
     <section>
       <h3>Le problème</h3>
-      <p>Des philosophes sont assis autour d’une table, une fourchette entre chaque assiette. Pour manger, il faut les deux fourchettes voisines. Chaque philosophe est un thread, chaque fourchette est protégée par un mutex, et personne ne doit mourir de faim plus de <code>time_to_die</code> ms après son dernier repas.</p>
+      <p>Des philosophes sont assis autour d’une table et doivent prendre deux fourchettes pour manger. Personne ne doit mourir de faim plus de <code>time_to_die</code> ms après son dernier repas. Partie obligatoire : un thread par philosophe et un mutex par fourchette, posée entre deux assiettes. Bonus : un processus par philosophe, et les fourchettes forment un tas au centre, compté par un sémaphore.</p>
     </section>
     <section>
       <h3>Ce que tu vois</h3>
-      <p>Le programme tourne vraiment : la table est dessinée à partir de ce qu’il affiche (« 200 3 is eating »). Les fourchettes se déplacent vers le philosophe qui les prend, dans l’ordre choisi par le code pour éviter l’interblocage : les philosophes pairs et impairs ne commencent pas par la même.</p>
+      <p>Le programme tourne vraiment : la table est dessinée à partir de ce qu’il affiche (« 200 3 is eating »). Dans la partie obligatoire, les fourchettes se déplacent vers le philosophe qui les prend, dans l’ordre choisi par le code pour éviter l’interblocage. Dans le bonus, elles partent du tas central.</p>
     </section>
     <section>
       <h3>Sous le capot</h3>
-      <p>Le code C est compilé tel quel en WebAssembly et s’exécute dans un Web Worker. Les pthreads y deviennent des fibres coopératives : chaque <code>usleep()</code> ou mutex occupé passe la main au philosophe suivant, avec la vraie horloge.</p>
+      <p>Le code C est compilé en WebAssembly et s’exécute dans un Web Worker. Les pthreads y deviennent des fibres coopératives : chaque <code>usleep()</code>, mutex ou sémaphore passe la main au suivant, avec la vraie horloge. Pour le bonus, <code>fork()</code> lance un « processus » de fibres, que <code>kill()</code> arrête ; les sémaphores nommés sont émulés.</p>
     </section>
   </div>
 </main>
@@ -165,9 +174,14 @@
     return a;
   }
   function showCmd() {
-    $('cmd').innerHTML = '$ <b>./philo ' + args().join(' ') + '</b>';
+    const bin = $('version').value === 'philo_bonus' ? './philo_bonus' : './philo';
+    $('cmd').innerHTML = '$ <b>' + bin + ' ' + args().join(' ') + '</b>';
+    $('version-note').textContent = $('version').value === 'philo_bonus'
+      ? 'Chaque philosophe est un processus avec son propre thread superviseur ; fourchettes, affichage et fin de partie passent par des sémaphores nommés.'
+      : 'Chaque philosophe est un thread ; chaque fourchette est protégée par un mutex.';
   }
   fields.forEach((f) => f.addEventListener('input', showCmd));
+  $('version').addEventListener('change', () => { showCmd(); if (worker) start(); });
   document.querySelectorAll('#presets .chip').forEach((b) => b.addEventListener('click', () => {
     const v = b.dataset.args.split(' ');
     fields.forEach((f, i) => { f.value = v[i] || ''; });
@@ -177,7 +191,7 @@
 
   function newSim(n) {
     const philos = Array.from({ length: n }, () => ({ state: 'think', forks: 0, meals: 0 }));
-    return { n, philos, forkHolder: new Array(n).fill(-1), time: 0, status: 'run', lines: [], dead: -1, meals: 0 };
+    return { n, philos, forkHolder: new Array(n).fill(-1), time: 0, status: 'run', lines: [], dead: -1, meals: 0, bonus: $('version').value === 'philo_bonus' };
   }
 
   // Fork order from srcs/action.c: philosopher id (0-based) takes fork id
@@ -194,7 +208,10 @@
     if (id < 0 || id >= sim.n) return;
     const p = sim.philos[id];
     sim.time = Math.max(sim.time, t);
-    if (msg === 'has taken a fork') {
+    if (msg === 'has taken a fork' && sim.bonus) {
+      p.forks = Math.min(2, p.forks + 1);
+      p.state = 'fork';
+    } else if (msg === 'has taken a fork') {
       const order = forkOrder(id, sim.n);
       const f = order[Math.min(p.forks, 1)];
       sim.forkHolder[f] = id;
@@ -224,19 +241,42 @@
     ctx.lineWidth = 6; ctx.strokeStyle = '#5a4330'; ctx.stroke();
     const plate = Math.max(6, Math.min(60, (Math.PI * R) / n * 0.75));
     const ang = (i) => -Math.PI / 2 + (i * 2 * Math.PI) / n;
+    const len = Math.max(8, Math.min(42, plate * 0.9));
+    const bonus = sim ? sim.bonus : $('version').value === 'philo_bonus';
+    const stick = (x, y, a, held) => {
+      ctx.save(); ctx.translate(x, y); ctx.rotate(a);
+      ctx.strokeStyle = held ? color('--fork') : '#c9c2b8';
+      ctx.lineWidth = Math.max(2, plate * 0.1); ctx.lineCap = 'round';
+      ctx.beginPath(); ctx.moveTo(-len / 2, 0); ctx.lineTo(len / 2, 0); ctx.stroke();
+      ctx.restore();
+    };
+    if (bonus) {
+      // bonus: forks are a pool (counting semaphore) in the middle of the table
+      const held = sim ? sim.philos.reduce((t, p) => t + p.forks, 0) : 0;
+      const free = Math.max(0, n - held);
+      const shown = Math.min(free, 24);
+      for (let k = 0; k < shown; k++) {
+        const a = (k / Math.max(1, shown)) * Math.PI * 2 + 0.3;
+        stick(cx + Math.cos(a) * R * 0.55, cy + 110 + Math.sin(a) * R * 0.12, a * 0.7, false);
+      }
+      ctx.fillStyle = color('--stage-ink'); ctx.globalAlpha = 0.75; ctx.textAlign = 'center';
+      ctx.font = '500 18px "Martian Mono", monospace';
+      ctx.fillText(free + ' / ' + n + ' fourchettes libres', cx, cy + 175);
+      ctx.globalAlpha = 1;
+      if (sim) sim.philos.forEach((p, i) => {
+        for (let k = 0; k < p.forks; k++) {
+          const a = ang(i) + (k ? 1 : -1) * Math.min(0.25, Math.PI / n * 0.45);
+          stick(cx + Math.cos(a) * R * 0.86, cy + Math.sin(a) * R * 0.86, a, true);
+        }
+      });
+    }
     // forks: fork j sits between philosopher j-1 and j (philosopher i uses forks i and i+1)
-    for (let j = 0; j < n; j++) {
+    for (let j = 0; j < n && !bonus; j++) {
       const holder = sim ? sim.forkHolder[j] : -1;
       let a = n === 1 ? ang(0) + 0.6 : ang(j) - Math.PI / n;
       let r = R * 0.98;
       if (holder >= 0) { a = ang(holder) + (j === holder ? -1 : 1) * Math.min(0.25, Math.PI / n * 0.45); r = R * 0.86; }
-      const len = Math.max(8, Math.min(42, plate * 0.9));
-      const x = cx + Math.cos(a) * r, y = cy + Math.sin(a) * r;
-      ctx.save(); ctx.translate(x, y); ctx.rotate(a);
-      ctx.strokeStyle = holder >= 0 ? color('--fork') : '#c9c2b8';
-      ctx.lineWidth = Math.max(2, plate * 0.1); ctx.lineCap = 'round';
-      ctx.beginPath(); ctx.moveTo(-len / 2, 0); ctx.lineTo(len / 2, 0); ctx.stroke();
-      ctx.restore();
+      stick(cx + Math.cos(a) * r, cy + Math.sin(a) * r, a, holder >= 0);
     }
     // philosophers
     for (let i = 0; i < n; i++) {
@@ -323,7 +363,7 @@
         sim.status = 'error'; stop();
       }
     };
-    worker.postMessage({ cmd: 'run', wasm: new URL('games/philosophers/philo.wasm', location.href).href, args: a });
+    worker.postMessage({ cmd: 'run', wasm: new URL('games/philosophers/' + $('version').value + '.wasm', location.href).href, args: a });
     $('stop').disabled = false;
   }
 

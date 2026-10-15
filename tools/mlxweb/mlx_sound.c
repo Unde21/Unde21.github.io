@@ -18,7 +18,7 @@ pid_t	mlxweb_play(const char *path, int loop)
 	return (js_sound_play(path, loop));
 }
 
-pid_t	waitpid(pid_t pid, int *status, int options)
+pid_t	mlxweb_sound_waitpid(pid_t pid, int *status, int options)
 {
 	(void)options;
 	if (status)
@@ -28,17 +28,33 @@ pid_t	waitpid(pid_t pid, int *status, int options)
 	return (pid);
 }
 
-pid_t	wait(int *status)
+pid_t	mlxweb_sound_wait(int *status)
 {
 	if (status)
 		*status = 0;
 	return (-1);
 }
 
-int	kill(pid_t pid, int sig)
+int	mlxweb_sound_kill(pid_t pid, int sig)
 {
 	(void)sig;
 	if (pid > 0)
 		js_sound_stop(pid);
 	return (0);
+}
+
+/* Weak, so the fiber build (mlx_fibers.c) can also emulate child processes. */
+__attribute__((weak)) pid_t	waitpid(pid_t pid, int *status, int options)
+{
+	return (mlxweb_sound_waitpid(pid, status, options));
+}
+
+__attribute__((weak)) pid_t	wait(int *status)
+{
+	return (mlxweb_sound_wait(status));
+}
+
+__attribute__((weak)) int	kill(pid_t pid, int sig)
+{
+	return (mlxweb_sound_kill(pid, sig));
 }
