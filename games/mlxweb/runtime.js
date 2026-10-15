@@ -27,20 +27,50 @@
     ArrowDown: 0xff54, ShiftLeft: 0xffe1, ShiftRight: 0xffe2, ControlLeft: 0xffe3,
     ControlRight: 0xffe4, AltLeft: 0xffe9, AltRight: 0xffea, MetaLeft: 0xffeb,
     MetaRight: 0xffec, CapsLock: 0xffe5, Home: 0xff50, End: 0xff57, PageUp: 0xff55,
-    PageDown: 0xff56, Minus: 0x2d, Equal: 0x3d, BracketLeft: 0x5b, BracketRight: 0x5d,
-    Semicolon: 0x3b, Quote: 0x27, Backquote: 0x60, Backslash: 0x5c, Comma: 0x2c,
-    Period: 0x2e, Slash: 0x2f,
+    PageDown: 0xff56,
   };
+  // Punctuation keys send their character; this is only the fallback when the
+  // browser gives no printable key (e.g. a dead key).
+  const PUNCT = { Minus: 0x2d, Equal: 0x3d, BracketLeft: 0x5b, BracketRight: 0x5d,
+    Semicolon: 0x3b, Quote: 0x27, Backquote: 0x60, Backslash: 0x5c, Comma: 0x2c,
+    Period: 0x2e, Slash: 0x2f, IntlBackslash: 0x3c };
   for (let i = 1; i <= 12; i++) SPECIAL['F' + i] = 0xffbe + i - 1;
 
+  // Gameplay keys follow their physical position, so WASD-style controls sit
+  // under the same fingers on any layout (ZQSD on AZERTY). Every other key
+  // sends the character printed on it, like X11 does, so M is M and typed
+  // words (cheat codes) work. See keyEvents() for keys that differ.
+  const POSITIONAL = new Set(['KeyW', 'KeyA', 'KeyS', 'KeyD', 'KeyQ', 'KeyE',
+    'KeyZ', 'KeyX', 'KeyC', 'KeyV']);
+
+  function positionSym(code) {
+    if (/^Key[A-Z]$/.test(code)) return code.charCodeAt(3) + 32;
+    if (/^Digit[0-9]$/.test(code)) return code.charCodeAt(5);
+    if (/^Numpad[0-9]$/.test(code)) return 0xffb0 + (code.charCodeAt(6) - 48);
+    return PUNCT[code] || 0;
+  }
+
+  function charSym(e) {
+    if (!e.key || [...e.key].length !== 1) return 0;
+    const c = e.key.toLowerCase().codePointAt(0);
+    if (c < 0x20 || c === 0x7f) return 0;
+    return c <= 0xff ? c : 0x01000000 + c;
+  }
+
+  // Returns [primary, extra]: primary is held like a real key; extra (the
+  // typed character, when it differs) is sent as a quick press + release, so
+  // it counts for typed sequences without moving or acting in the game.
+  function keyEvents(e, positional) {
+    if (SPECIAL[e.code] !== undefined) return [SPECIAL[e.code], 0];
+    const ch = charSym(e);
+    let primary;
+    if (positional.has(e.code) || /^(Digit|Numpad)[0-9]$/.test(e.code)) primary = positionSym(e.code);
+    else primary = ch || positionSym(e.code);
+    return [primary, ch && ch !== primary ? ch : 0];
+  }
+
   function keysym(e) {
-    // Physical position (e.code) so WASD works on QWERTY and AZERTY alike.
-    if (/^Key[A-Z]$/.test(e.code)) return e.code.charCodeAt(3) + 32;
-    if (/^Digit[0-9]$/.test(e.code)) return e.code.charCodeAt(5);
-    if (/^Numpad[0-9]$/.test(e.code)) return 0xffb0 + (e.code.charCodeAt(6) - 48);
-    if (SPECIAL[e.code] !== undefined) return SPECIAL[e.code];
-    if (e.key && e.key.length === 1) return e.key.toLowerCase().charCodeAt(0);
-    return 0;
+    return keyEvents(e, POSITIONAL)[0];
   }
 
   // ---------------------------------------------------------------- assets
@@ -363,18 +393,25 @@
       ];
     }
     const focusable = opts.keyTarget || window;
+    const positional = new Set(opts.positionalKeys || POSITIONAL);
+    const downByCode = new Map();
     function onKeyDown(e) {
       if (!running) return;
-      const k = keysym(e);
-      if (!k) return;
+      const [k, extra] = keyEvents(e, positional);
+      if (!k && !extra) return;
       if (opts.captureKeys !== false) e.preventDefault();
+      if (opts.onKeyLayout) opts.onKeyLayout(e.code, e.key);
       if (e.repeat && !autorepeat) return;
+      if (extra) { queue.push([2, extra, 0, 0]); queue.push([3, extra, 0, 0]); }
+      if (!k) return;
+      downByCode.set(e.code, k);
       pressed.add(k);
       queue.push([2, k, 0, 0]);
     }
     function onKeyUp(e) {
       if (!running) return;
-      const k = keysym(e);
+      const k = downByCode.has(e.code) ? downByCode.get(e.code) : keyEvents(e, positional)[0];
+      downByCode.delete(e.code);
       if (!k) return;
       pressed.delete(k);
       queue.push([3, k, 0, 0]);
@@ -382,6 +419,7 @@
     function onBlur() {
       for (const k of pressed) queue.push([3, k, 0, 0]);
       pressed.clear();
+      downByCode.clear();
     }
     // X11 button numbers: 1 left, 2 middle, 3 right, 4/5 wheel, 8/9 side buttons.
     function xButton(b) { return [1, 2, 3, 8, 9][b] || 1; }
