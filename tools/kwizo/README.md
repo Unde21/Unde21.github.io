@@ -32,6 +32,7 @@ Nothing in the Kwizo sources. The demo build works on copies and adds:
 | `app/sw.js` | Images (`<img src>` of avatars and quiz pictures) are fetched through a service worker that asks the page. |
 | `app/socketio-polling.js` | The app asks for WebSocket-only Socket.io; in the page it uses long-polling, which goes through the same bridge. Metro alias in `app/metro.demo.js`. |
 | `app.config.js` (copy) | `experiments.baseUrl` so the app lives under `/games/kwizo/app`. |
+| `AuthLayout.tsx` (copy) | `paddingBottom` on the phone layout, so the login footer links no longer sit on the box's rounded border. |
 | `app/bots.js` | Extra players for a lobby, following `backend/project/scripts/realtime-quiz-client.ts`. |
 
 OAuth sign-in (42, Google, GitHub) needs registered OAuth apps and a public callback URL, so the
