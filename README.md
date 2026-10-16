@@ -7,6 +7,7 @@ A static site (GitHub Pages) that presents my 42 projects and makes them playabl
 - `minishell.html`: web terminal (xterm.js) running the real minishell
 - `webserv.html`: the real webserv running in the page, with a browser frame, a request log and a raw HTTP console
 - `inception.html`: interactive diagram of the Docker infrastructure, driven by the project's own files in `games/inception/src/` (the nginx rules are applied to any URL)
+- `kwizo.html`: the real Kwizo app (Expo web build) and its real NestJS backend, both running in the visitor's tab (see `tools/kwizo/README.md`)
 - `philosophers.html`: dining philosophers simulation (the program runs in a Web Worker started by `games/mlxweb/wasi-worker.js`)
 - `games/`: programs compiled to WebAssembly, with their files (maps, textures, sounds)
 - `coi-serviceworker.js`: enables cross-origin isolation on GitHub Pages (needed by the Cub3D bonus threads)
@@ -49,6 +50,10 @@ webserv: C++98 built with the same `POSIX=1` mode. `tools/mlxweb/mlx_net.c` adds
 team's website is browsed through webserv itself. The config is `www/config` plus one
 `/cgi-bin/` location for JavaScript CGI scripts (`tools/mlxweb/ports/webserv/`), run by a small
 node-like interpreter, because Python is not available in the browser. No webserv file is modified.
+
+Kwizo (ft_transcendence): the Expo app is exported for the web, and the NestJS backend is compiled
+with tsc and bundled for the browser, with PostgreSQL replaced by PGlite (WebAssembly) and a
+virtual `http` server for Express and Socket.io. Details and rebuild steps in `tools/kwizo/README.md`.
 
 Web-only setting: the Cub3D bonus mouse sensitivity starts at 70 % of the pause-menu bar
 (`sensitivity = 110` instead of 175), applied at build time by `tools/mlxweb/ports/build_all.sh`.
