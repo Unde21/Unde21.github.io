@@ -1,0 +1,232 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Kwizo · Real-time multiplayer quiz</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Big+Shoulders+Display:wght@700;800&family=Martian+Mono:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="site.css">
+<link rel="stylesheet" href="game.css">
+<style>
+  .layout { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 2rem; align-items: start; }
+  .device-col { display: grid; gap: 0.75rem; justify-items: center; }
+  .views { display: flex; gap: 0.4rem; }
+  .tab { font: 600 0.75rem/1 var(--mono); padding: 0.65em 1em; border-radius: var(--radius); border: 1px solid var(--line); background: var(--panel); color: var(--ink); cursor: pointer; }
+  .tab[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+
+  /* the frames: the app runs at its real size and is scaled to fit */
+  .frame { position: relative; overflow: hidden; background: #05050f; }
+  .frame iframe { position: absolute; top: 0; left: 0; border: 0; transform-origin: 0 0; background: #05050f; }
+  .phone { position: relative; border-radius: 44px; padding: 14px; background: #111; box-shadow: 0 0 0 2px #2a2a33, 0 24px 60px rgba(0,0,0,0.35); }
+  .phone .frame { border-radius: 32px; }
+  .phone::before { content: ""; position: absolute; top: 5px; left: 50%; width: 56px; height: 4px; transform: translateX(-50%); border-radius: 2px; background: #2c2c35; }
+  .desktop { border-radius: 10px; background: #1b1b22; box-shadow: 0 0 0 1px #2a2a33, 0 24px 60px rgba(0,0,0,0.3); padding: 30px 0 0; position: relative; }
+  .desktop::before { content: ""; position: absolute; top: 11px; left: 14px; width: 9px; height: 9px; border-radius: 50%; background: #ff5f57; box-shadow: 15px 0 #febc2e, 30px 0 #28c840; }
+  .desktop .frame { border-radius: 0 0 10px 10px; }
+  .boot { position: absolute; inset: 0; z-index: 3; display: grid; place-content: center; justify-items: center; gap: 0.8rem; padding: 1.5rem; text-align: center;
+    background: rgba(5, 5, 15, 0.86); color: #e8e6f5; font-size: 0.9rem; backdrop-filter: blur(3px); }
+  .boot h2 { font-size: 2.2rem; color: #fff; }
+  .boot p { margin: 0; max-width: 22rem; color: #b9b6cf; }
+  .boot .progress span { animation: grow 14s ease-out forwards; }
+  @keyframes grow { from { width: 4%; } to { width: 92%; } }
+
+  .side { display: grid; gap: 1rem; min-width: 0; }
+  .card { border: 1px solid var(--line); border-radius: var(--radius); background: var(--panel); padding: 1rem 1.1rem; display: grid; gap: 0.65rem; min-width: 0; }
+  .card h3 { font-size: 1.5rem; }
+  .card p { margin: 0; color: var(--muted); }
+  .accounts { display: grid; gap: 0.35rem; margin: 0; }
+  .accounts div { display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; }
+  .accounts dt { font: 500 0.72rem/1 var(--mono); color: var(--muted); width: 5.5rem; }
+  .accounts dd { margin: 0; font: 600 0.8rem/1.3 var(--mono); }
+  .copy { font: 500 0.66rem/1 var(--mono); padding: 0.4em 0.6em; border-radius: 4px; border: 1px solid var(--line); background: transparent; color: var(--ink); cursor: pointer; }
+  .copy:hover { border-color: var(--accent); }
+  .state { font: 600 0.75rem/1.3 var(--mono); }
+  .state.ok { color: var(--accent); } .state.wait { color: var(--signal); }
+  .players { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.3rem; }
+  .players li { display: flex; justify-content: space-between; gap: 0.5rem; font: 500 0.78rem/1.3 var(--mono); padding: 0.4rem 0.6rem; border-radius: 4px; background: color-mix(in srgb, var(--accent) 8%, transparent); }
+  .players:empty { display: none; }
+  .row { display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center; }
+  .about ul { margin: 0; padding-left: 1.1rem; color: var(--muted); display: grid; gap: 0.3rem; }
+  @media (max-width: 900px) { .layout { grid-template-columns: minmax(0, 1fr); } }
+</style>
+</head>
+<body>
+<header class="bar">
+  <div class="wrap">
+    <a class="back" href="index.html">← Projects</a>
+    <h1>Kwizo</h1>
+    <span class="label">ft_transcendence · Expo · NestJS · Socket.io</span>
+    <span class="spacer"></span>
+    <span class="label">private repository · team of four</span>
+  </div>
+</header>
+
+<main class="wrap play">
+  <div class="layout">
+    <div class="device-col">
+      <div class="views" role="group" aria-label="View">
+        <button class="tab" type="button" data-view="phone" aria-pressed="true">Phone</button>
+        <button class="tab" type="button" data-view="desktop" aria-pressed="false">Desktop</button>
+      </div>
+      <div class="phone" id="device">
+        <div class="frame" id="frame">
+          <iframe id="app" title="Kwizo app" allow="clipboard-write"></iframe>
+          <div class="boot" id="boot">
+            <h2>Kwizo</h2>
+            <p id="boot-text">Starting the backend: NestJS, Prisma and PostgreSQL, compiled to run in this tab…</p>
+            <div class="progress"><span></span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="side">
+      <section class="card">
+        <h3>Log in</h3>
+        <p>Tap <b>Continue with Email</b> and use one of the demo accounts (or create your own).</p>
+        <dl class="accounts">
+          <div><dt>email</dt><dd id="acc-email">quizmaster@kwizo.demo</dd><button class="copy" type="button" data-copy="acc-email">copy</button></div>
+          <div><dt>password</dt><dd id="acc-pass">Password!0</dd><button class="copy" type="button" data-copy="acc-pass">copy</button></div>
+        </dl>
+        <p class="state wait" id="status">Backend starting…</p>
+      </section>
+
+      <section class="card">
+        <h3>Play against others</h3>
+        <p id="lobby-text">In <b>Quiz</b>, open a quiz’s menu (⋮), <b>Publish</b> it if it shows a red dot, then <b>Host Quiz</b> with <b>Participation</b> on. In the lobby, add players here, then press <b>Start Session</b>.</p>
+        <div class="row">
+          <button class="btn primary" type="button" id="add-bot" disabled>Add a player</button>
+          <button class="btn" type="button" id="add-bots" disabled>Add 3</button>
+        </div>
+        <ul class="players" id="players"></ul>
+      </section>
+
+      <section class="card">
+        <h3>Your data</h3>
+        <p>Everything you create stays in this browser (IndexedDB). Start again with the original data at any time.</p>
+        <div class="row"><button class="btn" type="button" id="reset">Reset the demo</button></div>
+      </section>
+    </div>
+  </div>
+
+  <div class="about">
+    <section>
+      <h3>The project</h3>
+      <p>Kwizo is our ft_transcendence: a real-time multiplayer quiz, as a web app and an Android app built with Expo, made by a team of four. I was Product Owner and front-end developer. Create quizzes, groups and invitations, host a session with a join code, and play live rounds with streaks, a fastest mode and leaderboards, in five languages.</p>
+    </section>
+    <section>
+      <h3>What runs here</h3>
+      <ul>
+        <li>the real Expo app, built for the web from its source</li>
+        <li>the real NestJS backend, in this tab: REST API, JWT auth, Socket.io gateways and the game engine</li>
+        <li>PostgreSQL itself (PGlite, compiled to WebAssembly) with the project’s Prisma migrations</li>
+        <li>data created by the project’s own seed script: 134 users, 36 groups, 30 quizzes</li>
+        <li>OAuth sign-in (42, Google, GitHub) needs real OAuth apps, so the demo uses email accounts</li>
+      </ul>
+    </section>
+    <section>
+      <h3>Under the hood</h3>
+      <p>The backend is compiled with tsc and bundled for the browser, with a virtual <code>http</code> module that Express and Socket.io attach to. The app’s requests to its API never leave the tab: a small XMLHttpRequest bridge hands them to that server, and Socket.io uses long-polling over the same bridge. The extra players are bots following the protocol of the team’s realtime test client.</p>
+    </section>
+  </div>
+</main>
+
+<script>
+(function () {
+  'use strict';
+  const $ = (id) => document.getElementById(id);
+  const APP = 'games/kwizo/app/';
+  const VIEWS = { phone: { w: 390, h: 844 }, desktop: { w: 1280, h: 800 } };
+  let view = 'phone';
+  const frame = $('frame'), app = $('app'), device = $('device');
+
+  function layout() {
+    const v = VIEWS[view];
+    const wide = document.querySelector('.layout').clientWidth;
+    const maxW = view === 'phone' ? Math.min(wide - 28, 390) : Math.min(wide, 1280);
+    const maxH = view === 'phone' ? Math.max(460, window.innerHeight - 240) : Math.max(360, window.innerHeight - 200);
+    const s = Math.min(1, maxW / v.w, maxH / v.h);
+    app.style.width = v.w + 'px'; app.style.height = v.h + 'px';
+    app.style.transform = `scale(${s})`;
+    frame.style.width = Math.round(v.w * s) + 'px'; frame.style.height = Math.round(v.h * s) + 'px';
+    device.className = view;
+    document.querySelector('.layout').style.gridTemplateColumns = view === 'desktop' || window.innerWidth <= 900 ? 'minmax(0, 1fr)' : '';
+  }
+  document.querySelectorAll('[data-view]').forEach((b) => b.addEventListener('click', () => {
+    view = b.dataset.view;
+    document.querySelectorAll('[data-view]').forEach((x) => x.setAttribute('aria-pressed', String(x === b)));
+    layout();
+  }));
+  window.addEventListener('resize', layout);
+  layout();
+
+  // backend status from the app frame (boot.js)
+  window.addEventListener('message', (e) => {
+    if (!e.data || e.data.kwizo !== 'status') return;
+    if (e.data.status === 'ready') { $('boot').hidden = true; $('status').textContent = 'Backend running in this tab.'; $('status').className = 'state ok'; }
+    if (e.data.status === 'error') { $('boot-text').textContent = 'The backend could not start in this browser. Try a recent Chrome, Edge, Firefox or Safari.'; $('status').textContent = 'Backend failed to start.'; }
+  });
+  app.src = APP;
+
+  document.querySelectorAll('[data-copy]').forEach((b) => b.addEventListener('click', async () => {
+    try { await navigator.clipboard.writeText($(b.dataset.copy).textContent); b.textContent = 'copied'; setTimeout(() => { b.textContent = 'copy'; }, 1200); } catch (e) { /* no clipboard */ }
+  }));
+
+  // bots for the current lobby
+  function appWin() { try { return app.contentWindow; } catch (e) { return null; } }
+  function joinCode() {
+    const w = appWin();
+    try { const u = new URL(w.location.href); return u.pathname.includes('/quiz/game/') ? u.searchParams.get('joinCode') : null; } catch (e) { return null; }
+  }
+  async function bots() {
+    const w = appWin();
+    if (!w) return null;
+    if (!w.__kwizoBots) {
+      await new Promise((resolve, reject) => {
+        const s = w.document.createElement('script');
+        s.src = new URL(APP + 'kwizo-bots.js', location.href).href;
+        s.onload = resolve; s.onerror = reject;
+        w.document.head.appendChild(s);
+      });
+      w.__kwizoBots.onChange(renderPlayers);
+    }
+    return w.__kwizoBots;
+  }
+  function renderPlayers(list) {
+    $('players').innerHTML = list.map((b) => `<li><span>${b.name}</span><span>${b.state === 'joining' ? 'joining…' : b.score + ' pts'}</span></li>`).join('');
+  }
+  async function add(n) {
+    const code = joinCode();
+    if (!code) return;
+    const b = await bots();
+    for (let i = 0; i < n; i++) b.add(code).catch((e) => { $('lobby-text').textContent = 'Could not add a player: ' + (e.message || e); });
+  }
+  $('add-bot').addEventListener('click', () => add(1));
+  $('add-bots').addEventListener('click', () => add(3));
+  let lastCode = null;
+  setInterval(() => {
+    const code = joinCode();
+    $('add-bot').disabled = $('add-bots').disabled = !code;
+    if (code !== lastCode) {
+      lastCode = code;
+      if (code) $('lobby-text').innerHTML = `Lobby <b>${code}</b> is open. Add players, then press <b>Start Session</b> in the app.`;
+    }
+  }, 700);
+
+  $('reset').addEventListener('click', async () => {
+    const w = appWin();
+    app.src = 'about:blank';
+    await new Promise((r) => setTimeout(r, 300));
+    try {
+      for (const k of Object.keys(localStorage)) if (/^kwizo-demo|accessToken|refreshToken/.test(k)) localStorage.removeItem(k);
+      for (const name of ['/pglite/kwizo-demo', 'kwizo-demo-files']) await new Promise((resolve) => { const r = indexedDB.deleteDatabase(name); r.onsuccess = r.onerror = r.onblocked = resolve; });
+    } catch (e) { /* ignore */ }
+    $('boot').hidden = false; $('status').textContent = 'Backend starting…'; $('status').className = 'state wait';
+    app.src = APP;
+  });
+})();
+</script>
+</body>
+</html>
