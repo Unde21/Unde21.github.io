@@ -6,6 +6,9 @@
   'use strict';
 
   function $(sel, root) { return (root || document).querySelector(sel); }
+  // English / French (i18n.js); config strings may be { en, fr }
+  const I = window.I18N || { t: (en) => en, L: (x) => (x && typeof x === 'object' ? x.en : x), onChange() {} };
+  const T = I.t, L = I.L;
 
   function mount(cfg) {
     const stage = $('#stage');
@@ -36,24 +39,30 @@
       variants.forEach((v, i) => {
         const o = document.createElement('option');
         o.value = String(i);
-        o.textContent = v.label + (usable(v) ? '' : ' (not available here)');
         o.disabled = !usable(v);
         variantSel.appendChild(o);
       });
+      labelVariants();
       const firstOk = variants.findIndex(usable);
       variantSel.value = String(firstOk);
       variantSel.addEventListener('change', () => { fillMaps(); stop(); showStart(); });
     }
+    function labelVariants() {
+      if (!variantSel) return;
+      [...variantSel.options].forEach((o, i) => { const v = variants[i]; o.textContent = L(v.label) + (usable(v) ? '' : T(' (not available here)', ' (indisponible ici)')); });
+    }
     function variant() { return variants[variantSel ? +variantSel.value : 0]; }
     function fillMaps() {
+      const keep = mapSel.value;
       mapSel.innerHTML = '';
       variant().maps.forEach((m) => {
         const o = document.createElement('option');
-        o.value = m.path; o.textContent = m.label;
+        o.value = m.path; o.textContent = L(m.label);
         mapSel.appendChild(o);
       });
+      if ([...mapSel.options].some((o) => o.value === keep)) mapSel.value = keep;
       const note = $('#variant-note');
-      if (note) note.textContent = variant().note || '';
+      if (note) note.textContent = L(variant().note) || '';
     }
     fillMaps();
     mapSel.addEventListener('change', () => { stop(); showStart(); });
@@ -64,7 +73,10 @@
       logBox.scrollTop = logBox.scrollHeight;
     }
 
+    let last = null; // the overlay as shown, redrawn when the language changes
     function setOverlay(state, t, body, btnLabel) {
+      last = [state, t, body, btnLabel];
+      t = L(t); body = L(body); btnLabel = L(btnLabel);
       overlay.hidden = state === 'hidden';
       overlay.dataset.state = state;
       title.textContent = t || '';
@@ -76,10 +88,10 @@
     function showStart() {
       const v = variant();
       if (!usable(v)) {
-        setOverlay('error', 'Not available here', 'This version uses threads, which need a cross-origin isolated page (COOP/COEP). It works on the published site.', '');
+        setOverlay('error', { en: 'Not available here', fr: 'Indisponible ici' }, { en: 'This version uses threads, which need a cross-origin isolated page (COOP/COEP). It works on the published site.', fr: 'Cette version utilise des threads, qui demandent une page isolée (COOP/COEP). Elle fonctionne sur le site publié.' }, '');
         return;
       }
-      setOverlay('ready', cfg.title, v.pitch || cfg.pitch || '', 'Start the game');
+      setOverlay('ready', cfg.title, v.pitch || cfg.pitch || '', { en: 'Start the game', fr: 'Lancer le jeu' });
     }
 
     function fitStage(w, h) {
@@ -96,7 +108,7 @@
     async function start() {
       stop();
       const v = variant();
-      setOverlay('loading', 'Loading…', v.loadingText || 'Downloading the program and its files.', '');
+      setOverlay('loading', { en: 'Loading…', fr: 'Chargement…' }, v.loadingText || { en: 'Downloading the program and its files.', fr: 'Téléchargement du programme et de ses fichiers.' }, '');
       barFill.style.width = '0%';
       if (logBox) logBox.textContent = '';
       try {
@@ -122,8 +134,8 @@
           onExit: (code, err) => {
             game = null;
             if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
-            if (err) setOverlay('error', 'The program stopped', String(err.message || err), 'Restart');
-            else setOverlay('ended', 'Game over', code === 0 ? 'The program exited normally.' : 'The program exited with code ' + code + '.', 'Play again');
+            if (err) setOverlay('error', { en: 'The program stopped', fr: 'Le programme s’est arrêté' }, String(err.message || err), { en: 'Restart', fr: 'Relancer' });
+            else setOverlay('ended', { en: 'Game over', fr: 'Partie terminée' }, code === 0 ? { en: 'The program exited normally.', fr: 'Le programme s’est terminé normalement.' } : { en: 'The program exited with code ' + code + '.', fr: 'Le programme s’est terminé avec le code ' + code + '.' }, { en: 'Play again', fr: 'Rejouer' });
           },
         });
         window.currentGame = game;
@@ -132,17 +144,19 @@
       } catch (e) {
         console.error(e);
         game = null;
-        setOverlay('error', 'Could not start the game', String(e.message || e), 'Try again');
+        setOverlay('error', { en: 'Could not start the game', fr: 'Impossible de lancer le jeu' }, String(e.message || e), { en: 'Try again', fr: 'Réessayer' });
       }
     }
 
     startBtn.addEventListener('click', start);
     if (restartBtn) restartBtn.addEventListener('click', start);
+    function labelSound() { if (soundBtn) soundBtn.textContent = muted ? T('Sound off', 'Son coupé') : T('Sound on', 'Son activé'); }
+    labelSound();
     if (soundBtn) {
       soundBtn.addEventListener('click', () => {
         muted = !muted;
         soundBtn.setAttribute('aria-pressed', String(!muted));
-        soundBtn.textContent = muted ? 'Sound off' : 'Sound on';
+        labelSound();
         if (game) game.setMuted(muted);
       });
     }
@@ -155,6 +169,7 @@
     }
     showStart();
     localizeKeys();
+    I.onChange(() => { labelVariants(); fillMaps(); labelSound(); if (last) setOverlay(...last); });
   }
 
   // Gameplay keys (data-code) follow their physical position: show each one

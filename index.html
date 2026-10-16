@@ -3,191 +3,256 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>samaouch · 42 projects</title>
+<title data-fr="Sammy Maouche · projets 42">Sammy Maouche · 42 projects</title>
 <meta name="claude:viewport-fit-sides" content="cover">
-<meta name="description" content="Projects by Sammy Maouche (samaouch) at 42 Lyon, playable in the browser.">
+<meta name="description" content="Projects by Sammy Maouche (samaouch) at 42 Lyon, playable in the browser." data-fr-content="Les projets de Sammy Maouche (samaouch) à 42 Lyon, jouables dans le navigateur.">
+<script src="i18n.js"></script>
 <script src="coi-serviceworker.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Big+Shoulders+Display:wght@700;800&family=Martian+Mono:wght@400;500;600&display=swap">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500..800&family=Instrument+Sans:wght@400..700&family=JetBrains+Mono:wght@400;500;600&display=swap">
 <link rel="stylesheet" href="site.css">
 <style>
-  .hero { padding-block: clamp(2.5rem, 7vw, 5rem) 2.5rem; display: grid; gap: 1.75rem; }
-  .hero h1 { font-size: clamp(3.4rem, 11vw, 7.5rem); line-height: 0.88; }
-  .hero h1 span { color: var(--accent); }
-  .hero p { margin: 0; max-width: 58ch; font-size: 1.1rem; color: var(--muted); }
-  .hero .links { display: flex; gap: 0.75rem; flex-wrap: wrap; }
+  html, body { overflow-x: clip; }
+  .hero { overflow-x: clip; }
 
-  .section-title { display: flex; align-items: baseline; gap: 1rem; flex-wrap: wrap; padding-block: 2rem 1rem; border-top: 1px solid var(--line); }
-  .section-title h2 { font-size: 2.2rem; }
+  /* ---------- hero */
+  .hero { position: relative; isolation: isolate; padding-block: max(1rem, env(safe-area-inset-top, 0px)) clamp(3rem, 8vw, 6rem); }
+  .hero::before {
+    content: ""; position: absolute; inset: -20rem -40vw 0; z-index: -1; pointer-events: none;
+    background:
+      radial-gradient(34rem 26rem at 78% 38%, color-mix(in srgb, var(--accent-2) 30%, transparent), transparent 70%),
+      radial-gradient(38rem 28rem at 18% 62%, color-mix(in srgb, var(--accent) 26%, transparent), transparent 70%);
+    filter: blur(10px);
+  }
+  .hero::after {
+    content: ""; position: absolute; inset: -20rem -40vw 0; z-index: -1; pointer-events: none;
+    background-image: linear-gradient(var(--line) 1px, transparent 1px), linear-gradient(90deg, var(--line) 1px, transparent 1px);
+    background-size: 56px 56px; opacity: 0.5;
+    -webkit-mask-image: radial-gradient(ellipse 60% 55% at 50% 45%, #000 20%, transparent 75%);
+            mask-image: radial-gradient(ellipse 60% 55% at 50% 45%, #000 20%, transparent 75%);
+  }
+  .top { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding-block: 1rem; }
+  .eyebrow { display: inline-flex; align-items: center; gap: 0.6rem; margin: 0; font: 500 0.78rem/1 var(--mono); color: var(--muted); letter-spacing: 0.04em; }
+  .eyebrow .dot { width: 0.55rem; height: 0.55rem; border-radius: 50%; background: var(--ok); box-shadow: 0 0 0 4px color-mix(in srgb, var(--ok) 22%, transparent); }
+  .hero-body { display: grid; gap: 1.6rem; padding-top: clamp(2.5rem, 8vw, 6rem); }
+  .name { display: grid; gap: 0.06em; font-size: clamp(3.6rem, 13vw, 9.5rem); line-height: 0.98; letter-spacing: -0.045em; font-weight: 800; }
+  .name span { display: block; }
+  .name .last {
+    background: linear-gradient(100deg, var(--accent) 10%, color-mix(in srgb, var(--accent) 45%, var(--accent-2)) 55%, var(--accent-2) 95%);
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+    padding-bottom: 0.06em;
+  }
+  .lead { margin: 0; max-width: 40rem; font-size: clamp(1.05rem, 2vw, 1.3rem); line-height: 1.55; color: var(--muted); }
+  .lead b { color: var(--ink); font-weight: 600; }
+  .links { display: flex; gap: 0.75rem; flex-wrap: wrap; }
+  .facts { list-style: none; margin: 1rem 0 0; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.75rem; max-width: 52rem; }
+  .facts li {
+    display: grid; gap: 0.25rem; padding: 1rem 1.1rem; border: 1px solid var(--line); border-radius: var(--radius-lg);
+    background: color-mix(in srgb, var(--panel) 70%, transparent); backdrop-filter: blur(6px);
+  }
+  .facts b { font: 800 1.6rem/1 var(--display); letter-spacing: -0.02em; }
+  .facts span { font-size: 0.86rem; color: var(--muted); line-height: 1.35; }
 
-  .featured { display: grid; gap: 2rem; padding-bottom: 1rem; }
+  /* ---------- projects */
+  .section-head { display: flex; align-items: end; justify-content: space-between; gap: 1rem 2rem; flex-wrap: wrap; padding-bottom: 1.5rem; }
+  .section-head h2 { font-size: clamp(2.2rem, 5vw, 3.4rem); }
+  .section-head p { margin: 0; color: var(--muted); max-width: 32rem; }
+
+  .grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.25rem; padding-bottom: 5rem; }
   .project {
-    display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 1.5rem 2.25rem;
-    align-items: center;
-    padding: 1.25rem; border: 1px solid var(--line); border-radius: var(--radius); background: var(--panel);
+    position: relative; display: grid; grid-template-rows: auto 1fr; min-width: 0;
+    border: 1px solid var(--line); border-radius: var(--radius-lg); background: var(--panel); overflow: hidden;
+    box-shadow: var(--shadow);
+    transition: transform 0.25s ease, border-color 0.25s, box-shadow 0.25s;
   }
-  .project .shot { display: block; border-radius: 4px; overflow: hidden; background: var(--stage); aspect-ratio: 16 / 9; }
-  .project .shot img { display: block; width: 100%; height: 100%; object-fit: cover; transition: transform 0.4s; }
-  .project .shot:hover img { transform: scale(1.025); }
+  .project:hover { transform: translateY(-4px); border-color: color-mix(in srgb, var(--accent) 55%, var(--line)); box-shadow: var(--shadow), 0 24px 60px -28px var(--accent); }
+  .project .shot { position: relative; display: block; aspect-ratio: 16 / 9; overflow: hidden; background: var(--stage); }
+  .project .shot img { display: block; width: 100%; height: 100%; object-fit: cover; transition: transform 0.6s cubic-bezier(.2,.7,.2,1); }
+  .project:hover .shot img { transform: scale(1.04); }
   .project.pixel .shot img { image-rendering: pixelated; object-fit: contain; }
-  .project .body { display: grid; gap: 0.9rem; min-width: 0; }
-  .project h3 { font-size: clamp(2.2rem, 5vw, 3.2rem); }
-  .project p { margin: 0; color: var(--muted); }
-  .tags { display: flex; flex-wrap: wrap; gap: 0.4rem; list-style: none; padding: 0; margin: 0; }
-  .tags li { font: 500 0.68rem/1 var(--mono); padding: 0.45em 0.6em; border-radius: 3px; background: color-mix(in srgb, var(--accent) 12%, transparent); color: var(--ink); }
-  .actions { display: flex; gap: 0.6rem; flex-wrap: wrap; }
-  .playable { color: var(--accent); }
-
-  .backlog { list-style: none; margin: 0; padding: 0 0 4rem; display: grid; }
-  .backlog li {
-    display: grid; grid-template-columns: 11rem minmax(0, 1fr) auto; gap: 0.5rem 1.5rem; align-items: baseline;
-    padding-block: 1rem; border-bottom: 1px solid var(--line);
+  .project .num {
+    position: absolute; top: 0.8rem; left: 0.8rem; z-index: 1;
+    font: 600 0.72rem/1 var(--mono); padding: 0.5em 0.7em; border-radius: 999px;
+    background: rgba(8, 8, 12, 0.66); color: #fff; backdrop-filter: blur(6px);
   }
-  .backlog h3 { font-size: 1.6rem; }
-  .backlog p { margin: 0; color: var(--muted); }
-  .backlog .status { font: 500 0.7rem/1.4 var(--mono); color: var(--signal); white-space: nowrap; }
-  .backlog a { font-size: 0.9rem; }
-  .backlog .meta { display: flex; gap: 1rem; align-items: baseline; justify-content: end; flex-wrap: wrap; }
+  .project .body { display: grid; gap: 0.8rem; align-content: start; padding: 1.3rem 1.4rem 1.4rem; min-width: 0; }
+  .project h3 { font-size: clamp(1.9rem, 3.4vw, 2.5rem); }
+  .project p { margin: 0; color: var(--muted); }
+  .badge { display: inline-flex; align-items: center; gap: 0.45rem; width: fit-content; font: 600 0.68rem/1 var(--mono); text-transform: uppercase; letter-spacing: 0.08em; color: var(--accent); }
+  .badge::before { content: ""; width: 0.45rem; height: 0.45rem; border-radius: 50%; background: currentColor; box-shadow: 0 0 0 3px color-mix(in srgb, currentColor 22%, transparent); }
+  .tags { display: flex; flex-wrap: wrap; gap: 0.35rem; list-style: none; padding: 0; margin: 0; }
+  .tags li { font: 500 0.68rem/1 var(--mono); padding: 0.5em 0.65em; border-radius: 999px; border: 1px solid var(--line); background: var(--panel-2); color: var(--ink); }
+  .actions { display: flex; gap: 0.6rem; flex-wrap: wrap; align-items: center; margin-top: 0.2rem; }
+  .actions .private { font: 500 0.72rem/1 var(--mono); color: var(--muted); }
 
-  footer { padding-block: 2rem 3rem; border-top: 1px solid var(--line); color: var(--muted); font-size: 0.9rem; }
+  .project.feature { grid-column: 1 / -1; grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); grid-template-rows: none; }
+  .project.feature .shot { aspect-ratio: auto; min-height: 100%; }
+  .project.feature .body { align-content: center; padding: clamp(1.4rem, 3vw, 2.4rem); gap: 1rem; }
+  .project.feature h3 { font-size: clamp(2.6rem, 5vw, 3.8rem); }
+  .project.feature p { font-size: 1.05rem; }
 
-  @media (max-width: 760px) {
-    .project { grid-template-columns: 1fr; }
-    .backlog li { grid-template-columns: 1fr; }
-    .backlog .meta { justify-content: start; }
+  footer { border-top: 1px solid var(--line); }
+  footer .wrap { display: flex; flex-wrap: wrap; gap: 0.75rem 2rem; justify-content: space-between; align-items: center; padding-block: 2rem calc(2rem + env(safe-area-inset-bottom, 0px)); color: var(--muted); font-size: 0.9rem; }
+  footer b { color: var(--ink); font-family: var(--display); font-size: 1.15rem; }
+
+  @media (max-width: 860px) {
+    .grid { grid-template-columns: minmax(0, 1fr); }
+    .project.feature { grid-template-columns: minmax(0, 1fr); }
+    .project.feature .shot { aspect-ratio: 16 / 9; }
+  }
+  @media (max-width: 560px) {
+    .facts { grid-template-columns: minmax(0, 1fr); }
+    .facts li { grid-template-columns: 6.5rem minmax(0, 1fr); align-items: center; }
+    .links .btn { flex: 1; }
   }
 </style>
 </head>
 <body>
-<header class="wrap hero">
-<pre class="header42" aria-hidden="true">/* ************************************************************************** */
-/*                                                                            */
-/*                                                        :::      ::::::::   */
-/*   <b>portfolio.c</b>                                        :+:      :+:    :+:   */
-/*                                                    +:+ +:+         +:+     */
-/*   By: <b>samaouch</b>                                   +#+  +:+       +#+        */
-/*                                                +#+#+#+#+#+   +#+           */
-/*   Campus: 42 Lyon                                   #+#    #+#             */
-/*   Status: compiled to WebAssembly                  ###   ########lyon.fr   */
-/*                                                                            */
-/* ************************************************************************** */</pre>
-  <h1>Sammy<br><span>Maouche</span></h1>
-  <p>Student at 42 Lyon. My projects are written in C and C++ for Linux; here they run right in the page thanks to WebAssembly, from their original source code.</p>
-  <div class="links">
-    <a class="btn primary" href="#playable">See the projects</a>
-    <a class="btn" href="https://github.com/Unde21" target="_blank" rel="noopener">GitHub · Unde21</a>
+<section class="hero">
+  <div class="wrap">
+    <div class="top">
+      <p class="eyebrow"><span class="dot" aria-hidden="true"></span>samaouch · 42 Lyon</p>
+      <div data-lang-slot></div>
+    </div>
+    <div class="hero-body">
+      <h1 class="name"><span class="first">Sammy</span><span class="last">Maouche</span></h1>
+      <p class="lead" data-fr="Étudiant à <b>42 Lyon</b>. J’écris du C et du C++ pour Linux, et du TypeScript full-stack. Chaque projet ci-dessous tourne <b>directement dans votre navigateur</b>, à partir de son code source d’origine.">Student at <b>42 Lyon</b>. I write C and C++ for Linux, and full-stack TypeScript. Every project below runs <b>right in your browser</b>, from its original source code.</p>
+      <div class="links">
+        <a class="btn primary" href="#projects"><span data-fr="Voir les projets">See the projects</span> <span class="arrow" aria-hidden="true">→</span></a>
+        <a class="btn" href="https://github.com/Unde21" target="_blank" rel="noopener">GitHub · Unde21</a>
+      </div>
+      <ul class="facts">
+        <li><b>7</b><span data-fr="projets à essayer, rien à installer">projects to try, nothing to install</span></li>
+        <li><b>WASM</b><span data-fr="le C et le C++ compilés tels quels en WebAssembly">C and C++ compiled as is to WebAssembly</span></li>
+        <li><b>0</b><span data-fr="serveur : tout tourne dans votre onglet">servers: everything runs in your tab</span></li>
+      </ul>
+    </div>
   </div>
-</header>
+</section>
 
-<main class="wrap">
-  <div class="section-title" id="playable">
-    <h2>Try them now</h2>
-    <span class="label">7 projects to explore</span>
+<main class="wrap" id="projects">
+  <div class="section-head">
+    <h2 data-fr="Projets">Projects</h2>
+    <p data-fr="Les plus ambitieux d’abord. Choisissez-en un et lancez-le.">The most ambitious first. Pick one and launch it.</p>
   </div>
 
-  <div class="featured">
-    <article class="project">
-      <a class="shot" href="cub3d.html" aria-label="Play Cub3D">
-        <img src="img/cub3d.webp" alt="Cub3D: carved stone corridor, ceiling with blue lights, round minimap in the bottom left corner." width="1200" height="694">
+  <div class="grid">
+    <article class="project feature">
+      <a class="shot" href="kwizo.html" aria-label="Play Kwizo" data-fr-aria-label="Jouer à Kwizo">
+        <span class="num">01</span>
+        <img src="img/kwizo.webp" alt="Kwizo: three phone screens of the app, the login page, the Top 100 global leaderboard and the quiz library." data-fr-alt="Kwizo : trois écrans de l’appli sur téléphone, la connexion, le classement mondial Top 100 et la bibliothèque de quiz." width="1200" height="675">
       </a>
       <div class="body">
-        <span class="label playable">Playable · full bonus</span>
+        <span class="badge" data-fr="Appli en direct · multijoueur">Live app · multiplayer</span>
+        <h3>Kwizo</h3>
+        <p data-fr="Notre ft_transcendence : un quiz multijoueur en temps réel pour le web, Android (APK) et iOS, réalisé à quatre ; j’étais Product Owner et développeur front-end. La vraie appli et son vrai backend tournent dans votre onglet : créez des quiz, lancez une session et jouez en direct contre des bots.">Our ft_transcendence: a real-time multiplayer quiz for the web, Android (APK) and iOS, made by a team of four; I was Product Owner and front-end developer. The real app and its real backend run in your tab: create quizzes, host a session and play live against bots.</p>
+        <ul class="tags"><li>Expo</li><li>React Native</li><li>NestJS</li><li>Socket.io</li><li>PostgreSQL</li></ul>
+        <div class="actions">
+          <a class="btn primary" href="kwizo.html"><span data-fr="Jouer">Play</span> <span class="arrow" aria-hidden="true">→</span></a>
+          <span class="private" data-fr="dépôt privé">private repository</span>
+        </div>
+      </div>
+    </article>
+
+    <article class="project">
+      <a class="shot" href="cub3d.html" aria-label="Play Cub3D" data-fr-aria-label="Jouer à Cub3D">
+        <span class="num">02</span>
+        <img src="img/cub3d.webp" alt="Cub3D: carved stone corridor, ceiling with blue lights, round minimap in the bottom left corner." data-fr-alt="Cub3D : couloir de pierre sculptée, plafond aux lumières bleues, minimap ronde en bas à gauche." width="1200" height="694">
+      </a>
+      <div class="body">
+        <span class="badge" data-fr="Jouable · 3D">Playable · 3D</span>
         <h3>Cub3D</h3>
-        <p>A Wolfenstein-style raycaster turned into a wizard game: coalitions, spells, enemies, magic doors, teleporting fireplaces and sound. Rendering is split across 16 threads. Two-person project.</p>
+        <p data-fr="Un raycaster façon Wolfenstein transformé en jeu de sorciers : coalitions, sorts, ennemis, portes magiques, cheminées de téléportation et son. Le rendu est réparti sur 16 threads. Projet à deux.">A Wolfenstein-style raycaster turned into a wizard game: coalitions, spells, enemies, magic doors, teleporting fireplaces and sound. Rendering is split across 16 threads. Two-person project.</p>
         <ul class="tags"><li>C</li><li>raycasting</li><li>pthreads</li><li>MiniLibX</li></ul>
         <div class="actions">
-          <a class="btn primary" href="cub3d.html">Play</a>
+          <a class="btn primary" href="cub3d.html"><span data-fr="Jouer">Play</span> <span class="arrow" aria-hidden="true">→</span></a>
           <a class="btn" href="https://github.com/Unde21/Cub3D" target="_blank" rel="noopener">Code</a>
         </div>
       </div>
     </article>
 
-    <article class="project pixel">
-      <a class="shot" href="so_long.html" aria-label="Play so_long">
-        <img src="img/so_long.webp" alt="so_long: top-down map with trees, Goku, Cell and crystal balls." width="1200" height="508">
-      </a>
-      <div class="body">
-        <span class="label playable">Playable · bonus</span>
-        <h3>so_long</h3>
-        <p>My first 2D game: Goku collects the crystal balls and reaches his spaceship while Cell chases him and fires beams. Animated sprites, combat and an on-screen step counter.</p>
-        <ul class="tags"><li>C</li><li>MiniLibX</li><li>sprites XPM</li><li>2D</li></ul>
-        <div class="actions">
-          <a class="btn primary" href="so_long.html">Play</a>
-          <a class="btn" href="https://github.com/Unde21/So_long" target="_blank" rel="noopener">Code</a>
-        </div>
-      </div>
-    </article>
     <article class="project">
-      <a class="shot" href="philosophers.html" aria-label="Run Philosophers">
-        <img src="img/philosophers.webp" alt="Philosophers: seven philosophers around a round table, coloured by whether they think, eat or sleep, with the forks between them." width="1200" height="675">
+      <a class="shot" href="minishell.html" aria-label="Open the Minishell terminal" data-fr-aria-label="Ouvrir le terminal Minishell">
+        <span class="num">03</span>
+        <img src="img/minishell.webp" alt="Minishell: dark terminal, green prompt with the exit status, a cat | sort | uniq -c pipeline and a heredoc." data-fr-alt="Minishell : terminal sombre, prompt vert avec le code de sortie, un pipeline cat | sort | uniq -c et un heredoc." width="1200" height="675" loading="lazy">
       </a>
       <div class="body">
-        <span class="label playable">Live simulation · bonus</span>
-        <h3>Philosophers</h3>
-        <p>The dining philosophers, with threads and mutexes, then processes and semaphores for the bonus: nobody may starve. Pick the parameters; the real program runs and the table is animated from what it prints.</p>
-        <ul class="tags"><li>C</li><li>pthreads</li><li>mutex</li><li>fork</li><li>semaphores</li></ul>
-        <div class="actions">
-          <a class="btn primary" href="philosophers.html">Run</a>
-          <a class="btn" href="https://github.com/Unde21/Philosophers" target="_blank" rel="noopener">Code</a>
-        </div>
-      </div>
-    </article>
-    <article class="project">
-      <a class="shot" href="minishell.html" aria-label="Open the Minishell terminal">
-        <img src="img/minishell.webp" alt="Minishell: dark terminal, green prompt with the exit status, a cat | sort | uniq -c pipeline and a heredoc." width="1200" height="675" loading="lazy">
-      </a>
-      <div class="body">
-        <span class="label playable">Live terminal · bonus</span>
+        <span class="badge" data-fr="Terminal en direct">Live terminal</span>
         <h3>Minishell</h3>
-        <p>A bash-like shell, two-person project: pipes, redirections, heredoc, variables, wildcards and signals. Type your commands: the real C program reads them, does its own <code>fork()</code> and <code>execve()</code>, and even starts a nested shell.</p>
+        <p data-fr="Un shell façon bash, projet à deux : pipes, redirections, heredoc, variables, wildcards et signaux. Tapez vos commandes : le vrai programme C les lit, fait ses propres <code>fork()</code> et <code>execve()</code>, et lance même un shell imbriqué.">A bash-like shell, two-person project: pipes, redirections, heredoc, variables, wildcards and signals. Type your commands: the real C program reads them, does its own <code>fork()</code> and <code>execve()</code>, and even starts a nested shell.</p>
         <ul class="tags"><li>C</li><li>fork / execve</li><li>pipes</li><li>signals</li><li>readline</li></ul>
         <div class="actions">
-          <a class="btn primary" href="minishell.html">Open the terminal</a>
+          <a class="btn primary" href="minishell.html"><span data-fr="Ouvrir le terminal">Open the terminal</span> <span class="arrow" aria-hidden="true">→</span></a>
           <a class="btn" href="https://github.com/Unde21/Minishell" target="_blank" rel="noopener">Code</a>
         </div>
       </div>
     </article>
+
     <article class="project">
-      <a class="shot" href="webserv.html" aria-label="Browse the site served by webserv">
-        <img src="img/webserv.webp" alt="webserv: a browser frame on localhost:8080 showing the team’s darts website login page, served by webserv." width="1200" height="675" loading="lazy">
+      <a class="shot" href="webserv.html" aria-label="Browse the site served by webserv" data-fr-aria-label="Parcourir le site servi par webserv">
+        <span class="num">04</span>
+        <img src="img/webserv.webp" alt="webserv: a browser frame on localhost:8080 showing the team’s darts website login page, served by webserv." data-fr-alt="webserv : un cadre de navigateur sur localhost:8080 qui affiche la page de connexion du site de fléchettes de l’équipe, servie par webserv." width="1200" height="675" loading="lazy">
       </a>
       <div class="body">
-        <span class="label playable">Live server · CGI</span>
+        <span class="badge" data-fr="Serveur en direct · CGI">Live server · CGI</span>
         <h3>webserv</h3>
-        <p>An HTTP/1.1 server in C++98, three-person project: nginx-style config, one <code>epoll</code> loop, uploads, error pages, chunked transfer and CGI. It runs in the page: browse its website, watch every request, or type raw HTTP yourself.</p>
+        <p data-fr="Un serveur HTTP/1.1 en C++98, projet à trois : configuration façon nginx, une seule boucle <code>epoll</code>, uploads, pages d’erreur, transfert chunked et CGI. Il tourne dans la page : parcourez son site, observez chaque requête ou tapez vous-même du HTTP brut.">An HTTP/1.1 server in C++98, three-person project: nginx-style config, one <code>epoll</code> loop, uploads, error pages, chunked transfer and CGI. It runs in the page: browse its website, watch every request, or type raw HTTP yourself.</p>
         <ul class="tags"><li>C++98</li><li>epoll</li><li>sockets</li><li>CGI</li><li>HTTP/1.1</li></ul>
         <div class="actions">
-          <a class="btn primary" href="webserv.html">Open the server</a>
+          <a class="btn primary" href="webserv.html"><span data-fr="Ouvrir le serveur">Open the server</span> <span class="arrow" aria-hidden="true">→</span></a>
           <a class="btn" href="https://github.com/Unde21/webserv" target="_blank" rel="noopener">Code</a>
         </div>
       </div>
     </article>
+
     <article class="project">
-      <a class="shot" href="inception.html" aria-label="Explore the Inception infrastructure">
-        <img src="img/inception.webp" alt="Inception: diagram of the Docker network, with nginx, WordPress, MariaDB, Redis, Adminer, cAdvisor, FTP and a static site, their ports and volumes." width="1200" height="675" loading="lazy">
+      <a class="shot" href="inception.html" aria-label="Explore the Inception infrastructure" data-fr-aria-label="Explorer l’infrastructure Inception">
+        <span class="num">05</span>
+        <img src="img/inception.webp" alt="Inception: diagram of the Docker network, with nginx, WordPress, MariaDB, Redis, Adminer, cAdvisor, FTP and a static site, their ports and volumes." data-fr-alt="Inception : schéma du réseau Docker avec nginx, WordPress, MariaDB, Redis, Adminer, cAdvisor, FTP et un site statique, leurs ports et leurs volumes." width="1200" height="675" loading="lazy">
       </a>
       <div class="body">
-        <span class="label playable">Interactive diagram · bonus</span>
+        <span class="badge" data-fr="Schéma interactif">Interactive diagram</span>
         <h3>Inception</h3>
-        <p>A Docker Compose infrastructure: nginx with TLS as the only door, WordPress on PHP-FPM, MariaDB, plus Redis, Adminer, cAdvisor, FTP and a static site. Follow a request through the real nginx rules, replay what <code>make</code> does, and read every Dockerfile.</p>
+        <p data-fr="Une infrastructure Docker Compose : nginx en TLS comme seule porte d’entrée, WordPress sur PHP-FPM, MariaDB, plus Redis, Adminer, cAdvisor, FTP et un site statique. Suivez une requête à travers les vraies règles nginx, rejouez ce que fait <code>make</code> et lisez chaque Dockerfile.">A Docker Compose infrastructure: nginx with TLS as the only door, WordPress on PHP-FPM, MariaDB, plus Redis, Adminer, cAdvisor, FTP and a static site. Follow a request through the real nginx rules, replay what <code>make</code> does, and read every Dockerfile.</p>
         <ul class="tags"><li>Docker</li><li>Compose</li><li>nginx</li><li>TLS</li><li>WordPress</li><li>MariaDB</li></ul>
         <div class="actions">
-          <a class="btn primary" href="inception.html">Explore</a>
+          <a class="btn primary" href="inception.html"><span data-fr="Explorer">Explore</span> <span class="arrow" aria-hidden="true">→</span></a>
           <a class="btn" href="https://github.com/Unde21/Inception" target="_blank" rel="noopener">Code</a>
         </div>
       </div>
     </article>
+
     <article class="project">
-      <a class="shot" href="kwizo.html" aria-label="Play Kwizo">
-        <img src="img/kwizo.webp" alt="Kwizo: three phone screens of the app, the login page, the Top 100 global leaderboard and the quiz library." width="1200" height="675" loading="lazy">
+      <a class="shot" href="philosophers.html" aria-label="Run Philosophers" data-fr-aria-label="Lancer Philosophers">
+        <span class="num">06</span>
+        <img src="img/philosophers.webp" alt="Philosophers: seven philosophers around a round table, coloured by whether they think, eat or sleep, with the forks between them." data-fr-alt="Philosophers : sept philosophes autour d’une table ronde, colorés selon qu’ils pensent, mangent ou dorment, avec les fourchettes entre eux." width="1200" height="675" loading="lazy">
       </a>
       <div class="body">
-        <span class="label playable">Live app · multiplayer</span>
-        <h3>Kwizo</h3>
-        <p>Our ft_transcendence: a real-time multiplayer quiz for the web, Android (APK) and iOS, made by a team of four; I was Product Owner and front-end developer. The real app and its real backend run in your tab: create quizzes, host a session and play live against bots.</p>
-        <ul class="tags"><li>Expo</li><li>React Native</li><li>NestJS</li><li>Socket.io</li><li>PostgreSQL</li></ul>
+        <span class="badge" data-fr="Simulation en direct">Live simulation</span>
+        <h3>Philosophers</h3>
+        <p data-fr="Le dîner des philosophes, avec threads et mutex, puis processus et sémaphores pour le bonus : personne ne doit mourir de faim. Choisissez les paramètres ; le vrai programme tourne et la table s’anime à partir de ce qu’il affiche.">The dining philosophers, with threads and mutexes, then processes and semaphores for the bonus: nobody may starve. Pick the parameters; the real program runs and the table is animated from what it prints.</p>
+        <ul class="tags"><li>C</li><li>pthreads</li><li>mutex</li><li>fork</li><li>semaphores</li></ul>
         <div class="actions">
-          <a class="btn primary" href="kwizo.html">Play</a>
+          <a class="btn primary" href="philosophers.html"><span data-fr="Lancer">Run</span> <span class="arrow" aria-hidden="true">→</span></a>
+          <a class="btn" href="https://github.com/Unde21/Philosophers" target="_blank" rel="noopener">Code</a>
+        </div>
+      </div>
+    </article>
+
+    <article class="project pixel">
+      <a class="shot" href="so_long.html" aria-label="Play so_long" data-fr-aria-label="Jouer à so_long">
+        <span class="num">07</span>
+        <img src="img/so_long.webp" alt="so_long: top-down map with trees, Goku, Cell and crystal balls." data-fr-alt="so_long : carte vue de dessus avec des arbres, Goku, Cell et des boules de cristal." width="1200" height="508" loading="lazy">
+      </a>
+      <div class="body">
+        <span class="badge" data-fr="Jouable · 2D">Playable · 2D</span>
+        <h3>so_long</h3>
+        <p data-fr="Mon premier jeu 2D : Goku ramasse les boules de cristal et rejoint son vaisseau pendant que Cell le poursuit en tirant des rayons. Sprites animés, combats et compteur de pas à l’écran.">My first 2D game: Goku collects the crystal balls and reaches his spaceship while Cell chases him and fires beams. Animated sprites, combat and an on-screen step counter.</p>
+        <ul class="tags"><li>C</li><li>MiniLibX</li><li>sprites XPM</li><li>2D</li></ul>
+        <div class="actions">
+          <a class="btn primary" href="so_long.html"><span data-fr="Jouer">Play</span> <span class="arrow" aria-hidden="true">→</span></a>
+          <a class="btn" href="https://github.com/Unde21/So_long" target="_blank" rel="noopener">Code</a>
         </div>
       </div>
     </article>
@@ -195,7 +260,11 @@
 </main>
 
 <footer>
-  <div class="wrap">Sammy Maouche · samaouch · 42 Lyon</div>
+  <div class="wrap">
+    <span><b>Sammy Maouche</b> · samaouch · 42 Lyon</span>
+    <span data-fr="Site statique : tous les programmes tournent dans votre navigateur.">Static site: every program runs in your browser.</span>
+    <a href="https://github.com/Unde21" target="_blank" rel="noopener">github.com/Unde21</a>
+  </div>
 </footer>
 </body>
 </html>

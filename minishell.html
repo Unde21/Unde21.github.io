@@ -3,10 +3,12 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Minishell · A shell in the browser</title>
+<title data-fr="Minishell · Un shell dans le navigateur">Minishell · A shell in the browser</title>
 <meta name="claude:viewport-fit-sides" content="cover">
+<script src="i18n.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Big+Shoulders+Display:wght@700;800&family=Martian+Mono:wght@400;500;600&display=swap">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500..800&family=Instrument+Sans:wght@400..700&family=JetBrains+Mono:wght@400;500;600&display=swap">
 <link rel="stylesheet" href="site.css">
 <link rel="stylesheet" href="game.css">
 <link rel="stylesheet" href="games/vendor/xterm/xterm.css">
@@ -65,64 +67,64 @@
 <body>
 <header class="bar">
   <div class="wrap">
-    <a class="back" href="index.html">← Projects</a>
+    <a class="back" href="index.html" data-fr="← Projets">← Projects</a>
     <h1>Minishell</h1>
     <span class="label">C · fork · execve · pipes · signals</span>
     <span class="spacer"></span>
-    <a class="btn" href="https://github.com/Unde21/Minishell" target="_blank" rel="noopener">Code on GitHub</a>
+    <a class="btn" href="https://github.com/Unde21/Minishell" target="_blank" rel="noopener" data-fr="Code sur GitHub">Code on GitHub</a>
   </div>
 </header>
 
 <main class="wrap play">
-  <div class="examples" id="examples" aria-label="Example commands">
-    <button class="chip" type="button" data-cmd="cat notes.txt | sort | uniq -c | sort -rn">Pipes <b>cat notes.txt | sort | uniq -c | sort -rn</b></button>
-    <button class="chip" type="button" data-cmd="echo &quot;Hi $USER, last status: $?&quot; '$HOME stays as is'">Variables and quotes <b>echo "Hi $USER" '$HOME'</b></button>
+  <div class="examples" id="examples" aria-label="Example commands" data-fr-aria-label="Exemples de commandes">
+    <button class="chip" type="button" data-cmd="cat notes.txt | sort | uniq -c | sort -rn"><span data-fr="Pipes">Pipes</span> <b>cat notes.txt | sort | uniq -c | sort -rn</b></button>
+    <button class="chip" type="button" data-cmd="echo &quot;Hi $USER, last status: $?&quot; '$HOME stays as is'"><span data-fr="Variables et guillemets">Variables and quotes</span> <b>echo "Hi $USER" '$HOME'</b></button>
     <button class="chip" type="button" data-cmd="cat &lt;&lt; EOF | wc -l&#13;first line, $USER&#13;second line&#13;EOF">Heredoc <b>cat &lt;&lt; EOF | wc -l</b></button>
     <button class="chip" type="button" data-cmd="ls -l > list.txt&#13;cat -e &lt; list.txt">Redirections <b>ls -l &gt; list.txt</b></button>
-    <button class="chip" type="button" data-cmd="cd minishell_src/srcs/builtins&#13;ls *.c&#13;grep -c ft_ *.c&#13;cd">Wildcards <b>ls *.c</b></button>
-    <button class="chip" type="button" data-cmd="grep -rn readline minishell_src | wc -l">The real code <b>grep -rn readline minishell_src</b></button>
-    <button class="chip" type="button" data-cmd="./minishell&#13;export INNER=nested&#13;echo $INNER&#13;exit 42&#13;echo $? $INNER">Nested shell <b>./minishell … exit 42</b></button>
-    <button class="chip" type="button" data-cmd="unset PATH&#13;ls&#13;/bin/ls&#13;export PATH=/bin">No PATH <b>unset PATH</b></button>
+    <button class="chip" type="button" data-cmd="cd minishell_src/srcs/builtins&#13;ls *.c&#13;grep -c ft_ *.c&#13;cd"><span data-fr="Wildcards">Wildcards</span> <b>ls *.c</b></button>
+    <button class="chip" type="button" data-cmd="grep -rn readline minishell_src | wc -l"><span data-fr="Le vrai code">The real code</span> <b>grep -rn readline minishell_src</b></button>
+    <button class="chip" type="button" data-cmd="./minishell&#13;export INNER=nested&#13;echo $INNER&#13;exit 42&#13;echo $? $INNER"><span data-fr="Shell imbriqué">Nested shell</span> <b>./minishell … exit 42</b></button>
+    <button class="chip" type="button" data-cmd="unset PATH&#13;ls&#13;/bin/ls&#13;export PATH=/bin"><span data-fr="Sans PATH">No PATH</span> <b>unset PATH</b></button>
   </div>
 
   <div class="term-wrap">
     <div class="term" id="term" aria-label="Terminal minishell">
       <div class="overlay" id="overlay" data-state="loading">
         <h2 id="ov-title">Loading</h2>
-        <p id="ov-text">Downloading minishell.wasm…</p>
-        <button class="btn primary" id="ov-btn" type="button" hidden>Restart</button>
+        <p id="ov-text">…</p>
+        <button class="btn primary" id="ov-btn" type="button" hidden data-fr="Relancer">Restart</button>
       </div>
     </div>
-    <div class="keysbar" aria-label="Special keys">
-      <span class="label">Keys</span>
+    <div class="keysbar" aria-label="Special keys" data-fr-aria-label="Touches spéciales">
+      <span class="label" data-fr="Touches">Keys</span>
       <button class="key" type="button" data-key="&#3;" title="SIGINT">Ctrl-C</button>
       <button class="key" type="button" data-key="&#28;" title="SIGQUIT">Ctrl-\</button>
-      <button class="key" type="button" data-key="&#4;" title="End of file">Ctrl-D</button>
-      <button class="key" type="button" data-key="&#27;[A" title="History">↑</button>
-      <button class="key" type="button" data-key="&#27;[B" title="History">↓</button>
+      <button class="key" type="button" data-key="&#4;" title="End of file" data-fr-title="Fin de fichier">Ctrl-D</button>
+      <button class="key" type="button" data-key="&#27;[A" title="History" data-fr-title="Historique">↑</button>
+      <button class="key" type="button" data-key="&#27;[B" title="History" data-fr-title="Historique">↓</button>
       <span class="spacer"></span>
-      <button class="btn" id="restart" type="button">Restart</button>
+      <button class="btn" id="restart" type="button" data-fr="Relancer">Restart</button>
     </div>
   </div>
 
   <div class="about">
     <section>
-      <h3>The project</h3>
-      <p>A bash-like shell written in C by a team of two: lexer, parser, expansion of variables and quotes, then execution with <code>fork()</code>, <code>execve()</code>, <code>pipe()</code> and <code>dup2()</code>. The prompt shows ✅ or ❌ depending on the exit status of the last command.</p>
+      <h3 data-fr="Le projet">The project</h3>
+      <p data-fr="Un shell façon bash écrit en C à deux : lexer, parser, expansion des variables et des guillemets, puis exécution avec <code>fork()</code>, <code>execve()</code>, <code>pipe()</code> et <code>dup2()</code>. Le prompt affiche ✅ ou ❌ selon le code de sortie de la dernière commande.">A bash-like shell written in C by a team of two: lexer, parser, expansion of variables and quotes, then execution with <code>fork()</code>, <code>execve()</code>, <code>pipe()</code> and <code>dup2()</code>. The prompt shows ✅ or ❌ depending on the exit status of the last command.</p>
     </section>
     <section>
-      <h3>Things to try</h3>
+      <h3 data-fr="À essayer">Things to try</h3>
       <ul>
-        <li>pipes <code>|</code>, redirections <code>&lt; &gt; &gt;&gt;</code> and heredoc <code>&lt;&lt;</code></li>
-        <li><code>$VAR</code>, <code>$?</code>, single and double quotes, wildcards <code>*</code></li>
-        <li>builtins: <code>echo -n</code>, <code>cd</code>, <code>pwd</code>, <code>export</code>, <code>unset</code>, <code>env</code>, <code>exit</code></li>
-        <li><kbd>Ctrl-C</kbd> during <code>sleep 10</code> or <code>cat</code>, <kbd>Ctrl-\</kbd>, <kbd>Ctrl-D</kbd> to quit</li>
-        <li><code>help</code> lists the commands in <code>/bin</code></li>
+        <li data-fr="pipes <code>|</code>, redirections <code>&lt; &gt; &gt;&gt;</code> et heredoc <code>&lt;&lt;</code>">pipes <code>|</code>, redirections <code>&lt; &gt; &gt;&gt;</code> and heredoc <code>&lt;&lt;</code></li>
+        <li data-fr="<code>$VAR</code>, <code>$?</code>, guillemets simples et doubles, wildcards <code>*</code>"><code>$VAR</code>, <code>$?</code>, single and double quotes, wildcards <code>*</code></li>
+        <li data-fr="builtins : <code>echo -n</code>, <code>cd</code>, <code>pwd</code>, <code>export</code>, <code>unset</code>, <code>env</code>, <code>exit</code>">builtins: <code>echo -n</code>, <code>cd</code>, <code>pwd</code>, <code>export</code>, <code>unset</code>, <code>env</code>, <code>exit</code></li>
+        <li data-fr="<kbd>Ctrl-C</kbd> pendant <code>sleep 10</code> ou <code>cat</code>, <kbd>Ctrl-\</kbd>, <kbd>Ctrl-D</kbd> pour quitter"><kbd>Ctrl-C</kbd> during <code>sleep 10</code> or <code>cat</code>, <kbd>Ctrl-\</kbd>, <kbd>Ctrl-D</kbd> to quit</li>
+        <li data-fr="<code>help</code> liste les commandes de <code>/bin</code>"><code>help</code> lists the commands in <code>/bin</code></li>
       </ul>
     </section>
     <section>
-      <h3>Under the hood</h3>
-      <p>Minishell’s C code is compiled to WebAssembly without changes. A small kernel written in JavaScript provides the system calls: each process has its own instance and memory, and <code>fork()</code> copies that memory into the child like a real fork. The commands in <code>/bin</code> (<code>ls</code>, <code>grep</code>, <code>sort</code>…) are rewritten in JavaScript; files live in memory and are gone on reload.</p>
+      <h3 data-fr="Sous le capot">Under the hood</h3>
+      <p data-fr="Le code C de Minishell est compilé en WebAssembly sans modification. Un petit noyau écrit en JavaScript fournit les appels système : chaque processus a sa propre instance et sa propre mémoire, et <code>fork()</code> copie cette mémoire dans l’enfant comme un vrai fork. Les commandes de <code>/bin</code> (<code>ls</code>, <code>grep</code>, <code>sort</code>…) sont réécrites en JavaScript ; les fichiers vivent en mémoire et disparaissent au rechargement.">Minishell’s C code is compiled to WebAssembly without changes. A small kernel written in JavaScript provides the system calls: each process has its own instance and memory, and <code>fork()</code> copies that memory into the child like a real fork. The commands in <code>/bin</code> (<code>ls</code>, <code>grep</code>, <code>sort</code>…) are rewritten in JavaScript; files live in memory and are gone on reload.</p>
     </section>
   </div>
 </main>
@@ -137,6 +139,22 @@
   'use strict';
   const $ = (id) => document.getElementById(id);
   const HOME = '/home/samaouch';
+  const T = I18N.t;
+  const README_FR = [
+    'Bienvenue dans minishell, compilé en WebAssembly.',
+    '',
+    'Tout ce que vous tapez est lu par le vrai programme C (readline), puis',
+    'analysé et exécuté par lui : fork, execve, pipe, dup2, waitpid.',
+    '',
+    'Dans ce dossier :',
+    '  minishell       le shell lui-même (./minishell lance un shell imbriqué)',
+    '  minishell_src/  son code source, à explorer avec ls, cat, grep, wc',
+    '  notes.txt       quelques lignes pour essayer sort, uniq, grep',
+    '',
+    'Pas de && ni de ; : ils ne font pas partie du sujet.',
+    'Tapez help pour la liste des commandes.',
+    '',
+  ].join('\n');
   const README = [
     'Welcome to minishell, compiled to WebAssembly.',
     '',
@@ -161,7 +179,7 @@
   const term = new Terminal({
     convertEol: true,
     cursorBlink: true,
-    fontFamily: '"Martian Mono", ui-monospace, Menlo, monospace',
+    fontFamily: '"JetBrains Mono", ui-monospace, Menlo, monospace',
     fontSize: window.innerWidth < 600 ? 12 : 13.5,
     lineHeight: 1.25,
     scrollback: 3000,
@@ -170,9 +188,9 @@
     theme: {
       background: 'rgba(0,0,0,0)',
       foreground: v('--stage-ink') || '#dfe7e4',
-      cursor: v('--accent') || '#43c9bb',
+      cursor: v('--accent') || '#ff6b3d',
       cursorAccent: v('--stage') || '#050807',
-      selectionBackground: 'rgba(67,201,187,0.35)',
+      selectionBackground: 'rgba(255,107,61,0.32)',
     },
   });
   const fit = new FitAddon.FitAddon();
@@ -198,7 +216,7 @@
     }
     fs.writeFile('/etc/hostname', 'portfolio\n');
     fs.writeFile(HOME + '/minishell', '\0asm', 0o755).exec = 'wasm:minishell';
-    fs.writeFile(HOME + '/README.txt', README);
+    fs.writeFile(HOME + '/README.txt', T(README, README_FR));
     fs.writeFile(HOME + '/notes.txt', NOTES);
     for (const [path, text] of Object.entries(sources || {})) {
       const full = HOME + '/minishell_src/' + path;
@@ -219,11 +237,11 @@
       onSessionEnd(status) {
         if (sys !== mine) return;
         const code = (status >> 8) & 0xff, sig = status & 0x7f;
-        show('ended', 'Session ended', (sig ? 'minishell was killed by signal ' + sig + '.' : 'minishell exited with status ' + code + '.') + ' Press Enter or Restart.', true);
+        show('ended', T('Session ended', 'Session terminée'), sig ? T('minishell was killed by signal ' + sig + '. Press Enter or Restart.', 'minishell a été tué par le signal ' + sig + '. Appuyez sur Entrée ou Relancer.') : T('minishell exited with status ' + code + '. Press Enter or Restart.', 'minishell s’est terminé avec le code ' + code + '. Appuyez sur Entrée ou Relancer.'), true);
       },
     });
     sys = mine;
-    term.write('\x1b[2mminishell · WebAssembly · cat README.txt to get started\x1b[0m\r\n\r\n');
+    term.write('\x1b[2mminishell · WebAssembly · ' + T('cat README.txt to get started', 'cat README.txt pour commencer') + '\x1b[0m\r\n\r\n');
     await sys.spawnRoot('minishell', ['minishell'], env, HOME);
     term.focus();
   }
@@ -253,9 +271,11 @@
 
   new ResizeObserver(() => { try { fit.fit(); } catch (e) { /* hidden */ } }).observe($('term'));
 
+  $('ov-title').textContent = T('Loading', 'Chargement');
+  $('ov-text').textContent = T('Downloading minishell.wasm…', 'Téléchargement de minishell.wasm…');
   (async () => {
     try {
-      await document.fonts.load('13px "Martian Mono"').catch(() => {});
+      await document.fonts.load('13px "JetBrains Mono"').catch(() => {});
       term.open($('term'));
       fit.fit();
       const [m, src] = await Promise.all([
@@ -269,7 +289,7 @@
       await boot();
     } catch (e) {
       console.error(e);
-      show('error', 'Could not start', String(e.message || e), false);
+      show('error', T('Could not start', 'Impossible de démarrer'), String(e.message || e), false);
     }
   })();
   window.minishell = { get sys() { return sys; }, term };
