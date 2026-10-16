@@ -46,13 +46,6 @@
   .lead { margin: 0; max-width: 40rem; font-size: clamp(1.05rem, 2vw, 1.3rem); line-height: 1.55; color: var(--muted); }
   .lead b { color: var(--ink); font-weight: 600; }
   .links { display: flex; gap: 0.75rem; flex-wrap: wrap; }
-  .facts { list-style: none; margin: 1rem 0 0; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.75rem; max-width: 52rem; }
-  .facts li {
-    display: grid; gap: 0.25rem; padding: 1rem 1.1rem; border: 1px solid var(--line); border-radius: var(--radius-lg);
-    background: color-mix(in srgb, var(--panel) 70%, transparent); backdrop-filter: blur(6px);
-  }
-  .facts b { font: 800 1.6rem/1 var(--display); letter-spacing: -0.02em; }
-  .facts span { font-size: 0.86rem; color: var(--muted); line-height: 1.35; }
 
   /* ---------- projects */
   .section-head { display: flex; align-items: end; justify-content: space-between; gap: 1rem 2rem; flex-wrap: wrap; padding-bottom: 1.5rem; }
@@ -95,6 +88,9 @@
   footer { border-top: 1px solid var(--line); }
   footer .wrap { display: flex; flex-wrap: wrap; gap: 0.75rem 2rem; justify-content: space-between; align-items: center; padding-block: 2rem calc(2rem + env(safe-area-inset-bottom, 0px)); color: var(--muted); font-size: 0.9rem; }
   footer b { color: var(--ink); font-family: var(--display); font-size: 1.15rem; }
+  footer .contact { display: flex; flex-wrap: wrap; gap: 0.5rem 1.5rem; }
+  footer .contact a { color: var(--ink); text-decoration: none; border-bottom: 1px solid var(--line); padding-bottom: 0.1em; }
+  footer .contact a:hover { color: var(--accent); border-color: var(--accent); }
 
   @media (max-width: 860px) {
     .grid { grid-template-columns: minmax(0, 1fr); }
@@ -102,14 +98,12 @@
     .project.feature .shot { aspect-ratio: 16 / 9; }
   }
   @media (max-width: 560px) {
-    .facts { grid-template-columns: minmax(0, 1fr); }
-    .facts li { grid-template-columns: 6.5rem minmax(0, 1fr); align-items: center; }
     .links .btn { flex: 1; }
   }
 </style>
 </head>
 <body>
-<section class="hero">
+<section class="hero" id="top">
   <div class="wrap">
     <div class="top">
       <p class="eyebrow"><span class="dot" aria-hidden="true"></span>samaouch · 42 Lyon</p>
@@ -122,11 +116,6 @@
         <a class="btn primary" href="#projects"><span data-fr="Voir les projets">See the projects</span> <span class="arrow" aria-hidden="true">→</span></a>
         <a class="btn" href="https://github.com/Unde21" target="_blank" rel="noopener">GitHub · Unde21</a>
       </div>
-      <ul class="facts">
-        <li><b>7</b><span data-fr="projets à essayer, rien à installer">projects to try, nothing to install</span></li>
-        <li><b>WASM</b><span data-fr="le C et le C++ compilés tels quels en WebAssembly">C and C++ compiled as is to WebAssembly</span></li>
-        <li><b>0</b><span data-fr="serveur : tout tourne dans votre onglet">servers: everything runs in your tab</span></li>
-      </ul>
     </div>
   </div>
 </section>
@@ -134,7 +123,6 @@
 <main class="wrap" id="projects">
   <div class="section-head">
     <h2 data-fr="Projets">Projects</h2>
-    <p data-fr="Les plus ambitieux d’abord. Choisissez-en un et lancez-le.">The most ambitious first. Pick one and launch it.</p>
   </div>
 
   <div class="grid">
@@ -192,7 +180,7 @@
     <article class="project">
       <a class="shot" href="webserv.html" aria-label="Browse the site served by webserv" data-fr-aria-label="Parcourir le site servi par webserv">
         <span class="num">04</span>
-        <img src="img/webserv.webp" alt="webserv: a browser frame on localhost:8080 showing the team’s darts website login page, served by webserv." data-fr-alt="webserv : un cadre de navigateur sur localhost:8080 qui affiche la page de connexion du site de fléchettes de l’équipe, servie par webserv." width="1200" height="675" loading="lazy">
+        <img src="img/webserv.webp" alt="webserv: the live request log (301, 404, 405, 411, CGI) next to a raw chunked POST to a CGI script and the server’s response." data-fr-alt="webserv : le journal des requêtes en direct (301, 404, 405, 411, CGI) à côté d’un POST chunked brut vers un script CGI et de la réponse du serveur." width="1200" height="675" loading="lazy">
       </a>
       <div class="body">
         <span class="badge" data-fr="Serveur en direct · CGI">Live server · CGI</span>
@@ -262,8 +250,11 @@
 <footer>
   <div class="wrap">
     <span><b>Sammy Maouche</b> · samaouch · 42 Lyon</span>
-    <span data-fr="Site statique : tous les programmes tournent dans votre navigateur.">Static site: every program runs in your browser.</span>
-    <a href="https://github.com/Unde21" target="_blank" rel="noopener">github.com/Unde21</a>
+    <nav class="contact" aria-label="Links" data-fr-aria-label="Liens">
+      <a href="https://github.com/Unde21" target="_blank" rel="noopener">GitHub</a>
+      <a href="https://profile.intra.42.fr/users/samaouch" target="_blank" rel="noopener" data-fr="Profil 42">42 profile</a>
+      <a href="#top" data-fr="Haut de page ↑">Back to top ↑</a>
+    </nav>
   </div>
 </footer>
 </body>

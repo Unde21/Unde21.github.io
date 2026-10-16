@@ -24,13 +24,15 @@
   }
   function parseHead(text) {
     const lines = text.split('\r\n');
-    const m = /^(HTTP\/\d\.\d)\s+(\d{3})\s*(.*)$/.exec(lines[0] || '');
+    // lenient: webserv echoes the request's version, so a request without one
+    // gets ' 404 Not Found' back; the code is still read
+    const m = /^(HTTP\/\d\.\d)?\s*(\d{3})\s*(.*)$/.exec(lines[0] || '');
     const headers = [];
     for (const l of lines.slice(1)) {
       const i = l.indexOf(':');
       if (i > 0) headers.push([l.slice(0, i).trim(), l.slice(i + 1).trim()]);
     }
-    return { version: m ? m[1] : '', status: m ? +m[2] : 0, statusText: m ? m[3] : '', headers };
+    return { version: m ? m[1] || '' : '', status: m ? +m[2] : 0, statusText: m ? m[3] : '', headers };
   }
   const header = (head, name) => {
     const h = head.headers.find(([k]) => k.toLowerCase() === name.toLowerCase());

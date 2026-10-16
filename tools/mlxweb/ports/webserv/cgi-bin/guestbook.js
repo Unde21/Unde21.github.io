@@ -13,7 +13,7 @@ background:#111;color:#eee;border:1px solid #444;border-radius:6px;font:inherit}
 button{background:#16d705;border:0;padding:.6rem 1.2rem;border-radius:6px;font-weight:700;cursor:pointer}
 pre{background:#111;padding:1rem;border-radius:6px;white-space:pre-wrap}</style></head><body>
 <h1>CGI guestbook</h1>
-${body ? `<p>webserv passed ${process.env.CONTENT_LENGTH} bytes on stdin:</p><pre>${esc(body)}</pre>
+${body ? `<p>webserv passed ${new TextEncoder().encode(body).length} bytes on stdin${process.env.CONTENT_LENGTH ? '' : ' (chunked request, so no CONTENT_LENGTH)'}:</p><pre>${esc(body)}</pre>
 <p><b>${esc(form.get('name') || 'Someone')}</b> says: ${esc(form.get('message') || '…')}</p>` : ''}
 <form method="POST" action="/cgi-bin/guestbook.js">
 <label>Name<input name="name" value="${esc(form.get('name') || '')}"></label>

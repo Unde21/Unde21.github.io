@@ -4,6 +4,8 @@
 # - app.config.js gets experiments.baseUrl (the app lives under BASE_URL)
 # - metro.config.js gains an alias: socket.io-client -> long-polling wrapper
 # - every exported page loads boot.js (backend in the page) first
+# - AuthLayout: bottom padding on the phone layout, so the login footer links
+#   (Data & Privacy, Terms of Use) no longer sit on the box's rounded border
 set -euo pipefail
 SRC="$1"; OUT="$2"; BASE="$3"
 HERE="$(cd "$(dirname "$0")" && pwd)"
@@ -19,6 +21,15 @@ s = open(p).read()
 a = 'experiments: {'
 assert a in s
 s = s.replace(a, a + f'\n\t\t\tbaseUrl: "{base}",', 1)
+open(p, 'w').write(s)
+PY
+python3 - "$WORK/components/auth/AuthLayout.tsx" <<'PY'
+import sys
+p = sys.argv[1]
+s = open(p).read()
+a = "paddingTop: 10, borderWidth: 1, margin: 20, borderRadius: 50,"
+assert a in s
+s = s.replace(a, "paddingTop: 10, paddingBottom: 24, borderWidth: 1, margin: 20, borderRadius: 50,", 1)
 open(p, 'w').write(s)
 PY
 cd "$WORK"
