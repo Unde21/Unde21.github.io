@@ -5,35 +5,37 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>so_long · Super Kamehameha</title>
 <meta name="claude:viewport-fit-sides" content="cover">
+<script src="i18n.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Big+Shoulders+Display:wght@700;800&family=Martian+Mono:wght@400;500;600&display=swap">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500..800&family=Instrument+Sans:wght@400..700&family=JetBrains+Mono:wght@400;500;600&display=swap">
 <link rel="stylesheet" href="site.css">
 <link rel="stylesheet" href="game.css">
 </head>
 <body>
 <header class="bar">
   <div class="wrap">
-    <a class="back" href="index.html">← Projects</a>
+    <a class="back" href="index.html" data-fr="← Projets">← Projects</a>
     <h1>so_long</h1>
     <span class="label">C · MiniLibX · 2D</span>
     <span class="spacer"></span>
-    <a class="btn" href="https://github.com/Unde21/So_long" target="_blank" rel="noopener">Code on GitHub</a>
+    <a class="btn" href="https://github.com/Unde21/So_long" target="_blank" rel="noopener" data-fr="Code sur GitHub">Code on GitHub</a>
   </div>
 </header>
 
 <main class="wrap play">
   <div class="toolbar">
     <div class="field">
-      <label class="label" for="map">Map (.ber)</label>
+      <label class="label" for="map" data-fr="Carte (.ber)">Map (.ber)</label>
       <select id="map"></select>
     </div>
     <span class="spacer"></span>
-    <button class="btn" id="restart" type="button">Restart</button>
-    <button class="btn" id="fullscreen" type="button">Fullscreen</button>
+    <button class="btn" id="restart" type="button" data-fr="Relancer">Restart</button>
+    <button class="btn" id="fullscreen" type="button" data-fr="Plein écran">Fullscreen</button>
   </div>
 
   <div class="stage pixel" id="stage">
-    <canvas id="screen" tabindex="0" width="1664" height="704" aria-label="so_long game screen"></canvas>
+    <canvas id="screen" tabindex="0" width="1664" height="704" aria-label="so_long game screen" data-fr-aria-label="Écran du jeu so_long"></canvas>
     <div class="overlay" id="overlay" data-state="ready">
       <h2 id="overlay-title">so_long</h2>
       <p id="overlay-text"></p>
@@ -44,25 +46,25 @@
 
   <div class="about">
     <section>
-      <h3>Controls</h3>
+      <h3 data-fr="Commandes">Controls</h3>
       <dl class="keys">
-        <dt><kbd data-code="KeyW">W</kbd><kbd data-code="KeyA">A</kbd><kbd data-code="KeyS">S</kbd><kbd data-code="KeyD">D</kbd></dt><dd>Move</dd>
-        <dt><kbd>F</kbd></dt><dd>Fire a Kamehameha at Cell</dd>
-        <dt><kbd>Esc</kbd></dt><dd>Quit the game</dd>
+        <dt><kbd data-code="KeyW">W</kbd><kbd data-code="KeyA">A</kbd><kbd data-code="KeyS">S</kbd><kbd data-code="KeyD">D</kbd></dt><dd data-fr="Se déplacer">Move</dd>
+        <dt><kbd>F</kbd></dt><dd data-fr="Lancer un Kamehameha sur Cell">Fire a Kamehameha at Cell</dd>
+        <dt><kbd>Esc</kbd></dt><dd data-fr="Quitter le jeu">Quit the game</dd>
       </dl>
     </section>
     <section>
-      <h3>The game</h3>
-      <p>Goku collects every crystal ball on the map, then reaches his spaceship to escape. Cell patrols and fires beams; hit him five times to take him down. The step counter is shown in the bottom left corner.</p>
+      <h3 data-fr="Le jeu">The game</h3>
+      <p data-fr="Goku ramasse toutes les boules de cristal de la carte, puis rejoint son vaisseau pour s’échapper. Cell patrouille et tire des rayons ; touchez-le cinq fois pour le mettre à terre. Le compteur de pas s’affiche en bas à gauche.">Goku collects every crystal ball on the map, then reaches his spaceship to escape. Cell patrols and fires beams; hit him five times to take him down. The step counter is shown in the bottom left corner.</p>
     </section>
     <section>
-      <h3>Under the hood</h3>
-      <p>The C code from the repository is compiled to WebAssembly as is. Only the MiniLibX changes: a reimplementation that draws to a canvas and takes the browser’s keyboard input. Maps and XPM sprites are read from a small in-memory file system.</p>
+      <h3 data-fr="Sous le capot">Under the hood</h3>
+      <p data-fr="Le code C du dépôt est compilé tel quel en WebAssembly. Seule la MiniLibX change : une réimplémentation qui dessine dans un canvas et lit le clavier du navigateur. Les cartes et les sprites XPM sont lus depuis un petit système de fichiers en mémoire.">The C code from the repository is compiled to WebAssembly as is. Only the MiniLibX changes: a reimplementation that draws to a canvas and takes the browser’s keyboard input. Maps and XPM sprites are read from a small in-memory file system.</p>
     </section>
   </div>
 
   <div class="field">
-    <span class="label">Program output</span>
+    <span class="label" data-fr="Sortie du programme">Program output</span>
     <pre class="log" id="log"></pre>
   </div>
 </main>
@@ -80,11 +82,11 @@ Player.mount({
     program: 'so_long_bonus',
     loopRate: 100000,
     screen: [7680, 4320],
-    pitch: 'Collect the crystal balls and escape from Cell.',
+    pitch: { en: 'Collect the crystal balls and escape from Cell.', fr: 'Ramassez les boules de cristal et échappez à Cell.' },
     maps: [
-      { label: '42 — the school map', path: 'map/42_map.ber' },
-      { label: 'Test room (26 × 37)', path: 'map/test_map.ber' },
-      { label: 'Giant forest (60 × 31)', path: 'map/FF_map.ber' },
+      { label: { en: '42 — the school map', fr: '42 — la carte de l’école' }, path: 'map/42_map.ber' },
+      { label: { en: 'Test room (26 × 37)', fr: 'Salle de test (26 × 37)' }, path: 'map/test_map.ber' },
+      { label: { en: 'Giant forest (60 × 31)', fr: 'Forêt géante (60 × 31)' }, path: 'map/FF_map.ber' },
     ],
   }],
 });

@@ -3,15 +3,17 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Philosophers · The dining philosophers</title>
+<title data-fr="Philosophers · Le dîner des philosophes">Philosophers · The dining philosophers</title>
 <meta name="claude:viewport-fit-sides" content="cover">
+<script src="i18n.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Big+Shoulders+Display:wght@700;800&family=Martian+Mono:wght@400;500;600&display=swap">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500..800&family=Instrument+Sans:wght@400..700&family=JetBrains+Mono:wght@400;500;600&display=swap">
 <link rel="stylesheet" href="site.css">
 <link rel="stylesheet" href="game.css">
 <style>
   :root {
-    --think: #8a9894;
+    --think: #8a889a;
     --fork: #e0a33a;
     --eat: #3fbf7f;
     --sleep: #5b8def;
@@ -58,17 +60,18 @@
   .legend i { width: 0.8rem; height: 0.8rem; border-radius: 50%; display: inline-block; }
   .side .log { max-height: none; height: clamp(14rem, 34vw, 30rem); }
   .side .log:empty::before { content: "Every line printed by the program shows up here, with its timestamp in ms."; }
+  html[lang="fr"] .side .log:empty::before { content: "Chaque ligne affichée par le programme apparaît ici, avec son horodatage en ms."; }
   @media (max-width: 860px) { .sim { grid-template-columns: 1fr; } .side .log { height: 16rem; } }
 </style>
 </head>
 <body>
 <header class="bar">
   <div class="wrap">
-    <a class="back" href="index.html">← Projects</a>
+    <a class="back" href="index.html" data-fr="← Projets">← Projects</a>
     <h1>Philosophers</h1>
     <span class="label">C · pthreads · mutex · semaphores</span>
     <span class="spacer"></span>
-    <a class="btn" href="https://github.com/Unde21/Philosophers" target="_blank" rel="noopener">Code on GitHub</a>
+    <a class="btn" href="https://github.com/Unde21/Philosophers" target="_blank" rel="noopener" data-fr="Code sur GitHub">Code on GitHub</a>
   </div>
 </header>
 
@@ -77,12 +80,12 @@
     <div class="field">
       <label class="label" for="version">Version</label>
       <select id="version">
-        <option value="philo">Mandatory: threads and mutexes</option>
-        <option value="philo_bonus">Bonus: processes and semaphores</option>
+        <option value="philo" data-fr="Obligatoire : threads et mutex">Mandatory: threads and mutexes</option>
+        <option value="philo_bonus" data-fr="Bonus : processus et sémaphores">Bonus: processes and semaphores</option>
       </select>
     </div>
     <div class="field">
-      <label class="label" for="n">Philosophers</label>
+      <label class="label" for="n" data-fr="Philosophes">Philosophers</label>
       <input id="n" type="number" min="1" max="200" value="5" required>
     </div>
     <div class="field">
@@ -98,40 +101,40 @@
       <input id="sleep" type="number" min="60" value="200" required>
     </div>
     <div class="field">
-      <label class="label" for="meals">Meals (optional)</label>
+      <label class="label" for="meals" data-fr="Repas (facultatif)">Meals (optional)</label>
       <input id="meals" type="number" min="1" placeholder="—">
     </div>
     <span class="spacer" style="flex:1"></span>
-    <button class="btn primary" id="run" type="submit">Run</button>
-    <button class="btn" id="stop" type="button" disabled>Stop</button>
+    <button class="btn primary" id="run" type="submit" data-fr="Lancer">Run</button>
+    <button class="btn" id="stop" type="button" disabled data-fr="Arrêter">Stop</button>
   </form>
-  <div class="presets" id="presets" aria-label="Examples">
-    <button class="chip" type="button" data-args="4 410 200 200">Nobody dies <b>4 410 200 200</b></button>
-    <button class="chip" type="button" data-args="4 310 200 100">A philosopher dies <b>4 310 200 100</b></button>
-    <button class="chip" type="button" data-args="5 800 200 200 7">Ends after 7 meals <b>5 800 200 200 7</b></button>
-    <button class="chip" type="button" data-args="1 800 200 200">Alone with one fork <b>1 800 200 200</b></button>
-    <button class="chip" type="button" data-args="200 800 200 200">200 philosophers <b>200 800 200 200</b></button>
+  <div class="presets" id="presets" aria-label="Examples" data-fr-aria-label="Exemples">
+    <button class="chip" type="button" data-args="4 410 200 200" data-fr="Personne ne meurt <b>4 410 200 200</b>">Nobody dies <b>4 410 200 200</b></button>
+    <button class="chip" type="button" data-args="4 310 200 100" data-fr="Un philosophe meurt <b>4 310 200 100</b>">A philosopher dies <b>4 310 200 100</b></button>
+    <button class="chip" type="button" data-args="5 800 200 200 7" data-fr="S’arrête après 7 repas <b>5 800 200 200 7</b>">Ends after 7 meals <b>5 800 200 200 7</b></button>
+    <button class="chip" type="button" data-args="1 800 200 200" data-fr="Seul avec une fourchette <b>1 800 200 200</b>">Alone with one fork <b>1 800 200 200</b></button>
+    <button class="chip" type="button" data-args="200 800 200 200" data-fr="200 philosophes <b>200 800 200 200</b>">200 philosophers <b>200 800 200 200</b></button>
   </div>
   <p class="cmd" id="cmd"></p>
   <p class="note" id="version-note"></p>
 
   <div class="sim">
     <div class="stage" id="stage">
-      <canvas id="table" width="1000" height="1000" aria-label="The philosophers’ table"></canvas>
+      <canvas id="table" width="1000" height="1000" aria-label="The philosophers’ table" data-fr-aria-label="La table des philosophes"></canvas>
     </div>
     <div class="side">
       <dl class="stats">
-        <div><dt>Time</dt><dd id="s-time">0 ms</dd></div>
-        <div><dt>State</dt><dd id="s-state">Ready</dd></div>
-        <div><dt>Meals served</dt><dd id="s-meals">0</dd></div>
-        <div><dt>Min. meals / philo</dt><dd id="s-min">0</dd></div>
+        <div><dt data-fr="Temps">Time</dt><dd id="s-time">0 ms</dd></div>
+        <div><dt data-fr="État">State</dt><dd id="s-state">Ready</dd></div>
+        <div><dt data-fr="Repas servis">Meals served</dt><dd id="s-meals">0</dd></div>
+        <div><dt data-fr="Repas min. / philo">Min. meals / philo</dt><dd id="s-min">0</dd></div>
       </dl>
       <ul class="legend">
-        <li><i style="background:var(--think)"></i>thinking</li>
-        <li><i style="background:var(--fork)"></i>has a fork</li>
-        <li><i style="background:var(--eat)"></i>eating</li>
-        <li><i style="background:var(--sleep)"></i>sleeping</li>
-        <li><i style="background:var(--dead)"></i>dead</li>
+        <li data-fr="<i style='background:var(--think)'></i>pense"><i style="background:var(--think)"></i>thinking</li>
+        <li data-fr="<i style='background:var(--fork)'></i>a une fourchette"><i style="background:var(--fork)"></i>has a fork</li>
+        <li data-fr="<i style='background:var(--eat)'></i>mange"><i style="background:var(--eat)"></i>eating</li>
+        <li data-fr="<i style='background:var(--sleep)'></i>dort"><i style="background:var(--sleep)"></i>sleeping</li>
+        <li data-fr="<i style='background:var(--dead)'></i>mort"><i style="background:var(--dead)"></i>dead</li>
       </ul>
       <pre class="log" id="log"></pre>
     </div>
@@ -139,16 +142,16 @@
 
   <div class="about">
     <section>
-      <h3>The problem</h3>
-      <p>Philosophers sit around a table and need two forks to eat. Nobody may go more than <code>time_to_die</code> ms without a meal. Mandatory part: one thread per philosopher and one mutex per fork, placed between two plates. Bonus: one process per philosopher, and the forks are a pile in the middle, counted by a semaphore.</p>
+      <h3 data-fr="Le problème">The problem</h3>
+      <p data-fr="Des philosophes sont assis autour d’une table et ont besoin de deux fourchettes pour manger. Aucun ne doit passer plus de <code>time_to_die</code> ms sans repas. Partie obligatoire : un thread par philosophe et un mutex par fourchette, posée entre deux assiettes. Bonus : un processus par philosophe, et les fourchettes forment une pile au centre, comptée par un sémaphore.">Philosophers sit around a table and need two forks to eat. Nobody may go more than <code>time_to_die</code> ms without a meal. Mandatory part: one thread per philosopher and one mutex per fork, placed between two plates. Bonus: one process per philosopher, and the forks are a pile in the middle, counted by a semaphore.</p>
     </section>
     <section>
-      <h3>What you see</h3>
-      <p>The program really runs: the table is drawn from what it prints (“200 3 is eating”). In the mandatory part, forks move to the philosopher who takes them, in the order the code uses to avoid deadlock. In the bonus, they come from the central pile.</p>
+      <h3 data-fr="Ce que vous voyez">What you see</h3>
+      <p data-fr="Le programme tourne vraiment : la table est dessinée à partir de ce qu’il affiche (« 200 3 is eating »). Dans la partie obligatoire, les fourchettes vont au philosophe qui les prend, dans l’ordre que le code utilise pour éviter l’interblocage. Dans le bonus, elles viennent de la pile centrale.">The program really runs: the table is drawn from what it prints (“200 3 is eating”). In the mandatory part, forks move to the philosopher who takes them, in the order the code uses to avoid deadlock. In the bonus, they come from the central pile.</p>
     </section>
     <section>
-      <h3>Under the hood</h3>
-      <p>The C code is compiled to WebAssembly and runs in a Web Worker. Pthreads become cooperative fibers there: each <code>usleep()</code>, mutex or semaphore hands over to the next one, on the real clock. For the bonus, <code>fork()</code> starts a “process” of fibers that <code>kill()</code> stops; named semaphores are emulated.</p>
+      <h3 data-fr="Sous le capot">Under the hood</h3>
+      <p data-fr="Le code C est compilé en WebAssembly et tourne dans un Web Worker. Les pthreads y deviennent des fibres coopératives : chaque <code>usleep()</code>, mutex ou sémaphore passe la main au suivant, sur la vraie horloge. Pour le bonus, <code>fork()</code> démarre un « processus » de fibres que <code>kill()</code> arrête ; les sémaphores nommés sont émulés.">The C code is compiled to WebAssembly and runs in a Web Worker. Pthreads become cooperative fibers there: each <code>usleep()</code>, mutex or semaphore hands over to the next one, on the real clock. For the bonus, <code>fork()</code> starts a “process” of fibers that <code>kill()</code> stops; named semaphores are emulated.</p>
     </section>
   </div>
 </main>
@@ -157,6 +160,7 @@
 (function () {
   'use strict';
   const $ = (id) => document.getElementById(id);
+  const T = I18N.t;
   const canvas = $('table');
   const ctx = canvas.getContext('2d');
   const logBox = $('log');
@@ -177,10 +181,11 @@
     const bin = $('version').value === 'philo_bonus' ? './philo_bonus' : './philo';
     $('cmd').innerHTML = '$ <b>' + bin + ' ' + args().join(' ') + '</b>';
     $('version-note').textContent = $('version').value === 'philo_bonus'
-      ? 'Each philosopher is a process with its own monitor thread; forks, printing and the end of the simulation go through named semaphores.'
-      : 'Each philosopher is a thread; each fork is protected by a mutex.';
+      ? T('Each philosopher is a process with its own monitor thread; forks, printing and the end of the simulation go through named semaphores.', 'Chaque philosophe est un processus avec son propre thread de surveillance ; les fourchettes, l’affichage et la fin de la simulation passent par des sémaphores nommés.')
+      : T('Each philosopher is a thread; each fork is protected by a mutex.', 'Chaque philosophe est un thread ; chaque fourchette est protégée par un mutex.');
   }
   fields.forEach((f) => f.addEventListener('input', showCmd));
+  I18N.onChange(showCmd);
   $('version').addEventListener('change', () => { showCmd(); if (worker) start(); });
   document.querySelectorAll('#presets .chip').forEach((b) => b.addEventListener('click', () => {
     const v = b.dataset.args.split(' ');
@@ -260,8 +265,8 @@
         stick(cx + Math.cos(a) * R * 0.55, cy + 110 + Math.sin(a) * R * 0.12, a * 0.7, false);
       }
       ctx.fillStyle = color('--stage-ink'); ctx.globalAlpha = 0.75; ctx.textAlign = 'center';
-      ctx.font = '500 18px "Martian Mono", monospace';
-      ctx.fillText(free + ' / ' + n + ' forks free', cx, cy + 175);
+      ctx.font = '500 18px "JetBrains Mono", monospace';
+      ctx.fillText(free + ' / ' + n + T(' forks free', ' fourchettes libres'), cx, cy + 175);
       ctx.globalAlpha = 1;
       if (sim) sim.philos.forEach((p, i) => {
         for (let k = 0; k < p.forks; k++) {
@@ -290,27 +295,27 @@
         ctx.beginPath(); ctx.moveTo(x - d, y - d); ctx.lineTo(x + d, y + d); ctx.moveTo(x + d, y - d); ctx.lineTo(x - d, y + d); ctx.stroke();
       }
       if (n <= 60) {
-        ctx.fillStyle = '#0b0f0e';
-        ctx.font = '600 ' + Math.round(plate * 0.38) + 'px "Martian Mono", monospace';
+        ctx.fillStyle = '#07070c';
+        ctx.font = '600 ' + Math.round(plate * 0.38) + 'px "JetBrains Mono", monospace';
         ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
         if (p.state !== 'dead') ctx.fillText(String(i + 1), x, y + 1);
         if (n <= 20) {
           ctx.fillStyle = color('--stage-ink');
-          ctx.font = '500 18px "Martian Mono", monospace';
+          ctx.font = '500 18px "JetBrains Mono", monospace';
           const off = R * 1.22 + plate * 0.5 + 14, c = Math.cos(a);
           const ox = cx + c * off, oy = cy + Math.sin(a) * (off + 8);
           ctx.textAlign = c > 0.35 ? 'left' : c < -0.35 ? 'right' : 'center';
-          ctx.fillText(p.meals + (p.meals === 1 ? ' meal' : ' meals'), ox, oy);
+          ctx.fillText(p.meals + T(p.meals === 1 ? ' meal' : ' meals', ' repas'), ox, oy);
         }
       }
     }
     // centre caption
     ctx.fillStyle = color('--stage-ink'); ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-    ctx.font = '700 64px "Big Shoulders Display", sans-serif';
+    ctx.font = '700 64px "Bricolage Grotesque", sans-serif';
     ctx.fillText(sim ? sim.time + ' ms' : './philo', cx, cy - 10);
-    ctx.font = '500 20px "Martian Mono", monospace';
+    ctx.font = '500 20px "JetBrains Mono", monospace';
     ctx.globalAlpha = 0.7;
-    ctx.fillText(sim ? (sim.status === 'dead' ? 'philosopher ' + (sim.dead + 1) + ' died' : sim.status === 'done' ? 'simulation over' : n + (n === 1 ? ' philosopher' : ' philosophers')) : 'pick some parameters', cx, cy + 44);
+    ctx.fillText(sim ? (sim.status === 'dead' ? T('philosopher ' + (sim.dead + 1) + ' died', 'le philosophe ' + (sim.dead + 1) + ' est mort') : sim.status === 'done' ? T('simulation over', 'simulation terminée') : n + (n === 1 ? T(' philosopher', ' philosophe') : T(' philosophers', ' philosophes'))) : T('pick some parameters', 'choisissez des paramètres'), cx, cy + 44);
     ctx.globalAlpha = 1;
   }
 
@@ -322,14 +327,14 @@
       $('s-min').textContent = String(sim.philos.reduce((m, p) => Math.min(m, p.meals), Infinity));
       const st = $('s-state');
       st.className = sim.status === 'dead' ? 'state-dead' : sim.status === 'done' ? 'state-done' : '';
-      st.textContent = { run: 'Running', dead: 'Dead', done: 'Done', error: 'Error', stopped: 'Stopped' }[sim.status];
+      st.textContent = T({ run: 'Running', dead: 'Dead', done: 'Done', error: 'Error', stopped: 'Stopped' }[sim.status], { run: 'En cours', dead: 'Mort', done: 'Terminé', error: 'Erreur', stopped: 'Arrêté' }[sim.status]);
       if (pendingLog.length) {
         sim.lines.push(...pendingLog); pendingLog = [];
         if (sim.lines.length > 400) sim.lines.splice(0, sim.lines.length - 400);
         logBox.textContent = sim.lines.join('\n');
         logBox.scrollTop = logBox.scrollHeight;
       }
-    }
+    } else $('s-state').textContent = T('Ready', 'Prêt');
     draw();
     requestAnimationFrame(frame);
   }

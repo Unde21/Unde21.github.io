@@ -3,10 +3,12 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>webserv · An HTTP server in the page</title>
+<title data-fr="webserv · Un serveur HTTP dans la page">webserv · An HTTP server in the page</title>
 <meta name="claude:viewport-fit-sides" content="cover">
+<script src="i18n.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Big+Shoulders+Display:wght@700;800&family=Martian+Mono:wght@400;500;600&display=swap">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500..800&family=Instrument+Sans:wght@400..700&family=JetBrains+Mono:wght@400;500;600&display=swap">
 <link rel="stylesheet" href="site.css">
 <link rel="stylesheet" href="game.css">
 <style>
@@ -34,6 +36,7 @@
   .panel .head { display: flex; align-items: baseline; gap: 0.75rem; flex-wrap: wrap; }
   .panel .head .spacer { flex: 1; }
   .reqs { list-style: none; margin: 0; padding: 0; border: 1px solid var(--line); border-radius: var(--radius); background: var(--panel); max-height: 21rem; overflow: auto; }
+  html[lang="fr"] .reqs:empty::before { content: "Les requêtes du navigateur ci-dessus s’affichent ici."; }
   .reqs:empty::before { content: "Requests made by the browser above show up here."; display: block; padding: 0.9rem; color: var(--muted); font-size: 0.9rem; }
   .reqs li { display: grid; grid-template-columns: 4.2rem 3rem minmax(0, 1fr) auto; gap: 0.6rem; align-items: baseline; padding: 0.42rem 0.75rem; border-bottom: 1px solid var(--line); cursor: pointer; font: 500 0.74rem/1.35 var(--mono); }
   .reqs li:hover, .reqs li[aria-selected="true"] { background: color-mix(in srgb, var(--accent) 9%, transparent); }
@@ -57,6 +60,7 @@
   .status-pill { font: 600 0.72rem/1 var(--mono); padding: 0.45em 0.7em; border-radius: 999px; background: color-mix(in srgb, var(--accent) 12%, transparent); }
   .serverlog { max-height: 12rem; }
   .serverlog:empty::before { content: "webserv’s stdout and stderr show up here."; }
+  html[lang="fr"] .serverlog:empty::before { content: "Le stdout et le stderr de webserv s’affichent ici."; }
   .about ul { margin: 0; padding-left: 1.1rem; color: var(--muted); display: grid; gap: 0.3rem; }
   @media (max-width: 900px) { .panels { grid-template-columns: 1fr; } }
   @media (max-width: 560px) { .address { order: -1; flex-basis: 100%; min-width: 0; } .navbar .btn { margin-left: auto; } }
@@ -65,36 +69,36 @@
 <body>
 <header class="bar">
   <div class="wrap">
-    <a class="back" href="index.html">← Projects</a>
+    <a class="back" href="index.html" data-fr="← Projets">← Projects</a>
     <h1>webserv</h1>
     <span class="label">C++98 · epoll · CGI · HTTP/1.1</span>
     <span class="spacer"></span>
-    <a class="btn" href="https://github.com/Unde21/webserv" target="_blank" rel="noopener">Code on GitHub</a>
+    <a class="btn" href="https://github.com/Unde21/webserv" target="_blank" rel="noopener" data-fr="Code sur GitHub">Code on GitHub</a>
   </div>
 </header>
 
 <main class="wrap play">
   <div class="browser">
     <form class="navbar" id="nav">
-      <button class="icon" type="button" id="back" title="Back" aria-label="Back">←</button>
-      <button class="icon" type="button" id="fwd" title="Forward" aria-label="Forward">→</button>
-      <button class="icon" type="button" id="reload" title="Reload" aria-label="Reload">⟳</button>
-      <label class="address"><span>http://localhost:8080</span><input id="url" value="/" spellcheck="false" autocomplete="off" aria-label="Path"></label>
-      <button class="btn" type="submit">Go</button>
+      <button class="icon" type="button" id="back" title="Back" aria-label="Back" data-fr-title="Précédent" data-fr-aria-label="Précédent">←</button>
+      <button class="icon" type="button" id="fwd" title="Forward" aria-label="Forward" data-fr-title="Suivant" data-fr-aria-label="Suivant">→</button>
+      <button class="icon" type="button" id="reload" title="Reload" aria-label="Reload" data-fr-title="Recharger" data-fr-aria-label="Recharger">⟳</button>
+      <label class="address"><span>http://localhost:8080</span><input id="url" value="/" spellcheck="false" autocomplete="off" aria-label="Path" data-fr-aria-label="Chemin"></label>
+      <button class="btn" type="submit" data-fr="Aller">Go</button>
     </form>
     <div class="quick" aria-label="Pages">
-      <button class="chip" type="button" data-go="/">Redirect <b>/</b></button>
-      <button class="chip" type="button" data-go="/Dart">Darts <b>/Dart</b></button>
-      <button class="chip" type="button" data-go="/Account">Sign up / in <b>/Account</b></button>
+      <button class="chip" type="button" data-go="/"><span data-fr="Redirection">Redirect</span> <b>/</b></button>
+      <button class="chip" type="button" data-go="/Dart"><span data-fr="Fléchettes">Darts</span> <b>/Dart</b></button>
+      <button class="chip" type="button" data-go="/Account"><span data-fr="Inscription / connexion">Sign up / in</span> <b>/Account</b></button>
       <button class="chip" type="button" data-go="/cgi-bin/env.js?name=42%20Lyon">CGI <b>/cgi-bin/env.js</b></button>
       <button class="chip" type="button" data-go="/cgi-bin/guestbook.js">CGI + POST <b>/cgi-bin/guestbook.js</b></button>
-      <button class="chip" type="button" data-go="/img/missing.png">Error page <b>/img/missing.png</b></button>
+      <button class="chip" type="button" data-go="/img/missing.png"><span data-fr="Page d’erreur">Error page</span> <b>/img/missing.png</b></button>
     </div>
     <div class="viewport">
-      <iframe id="view" title="Site served by webserv"></iframe>
+      <iframe id="view" title="Site served by webserv" data-fr-title="Site servi par webserv"></iframe>
       <div class="overlay" id="overlay" data-state="loading">
-        <h2 id="ov-title">Starting webserv</h2>
-        <p id="ov-text">Downloading the server and its website…</p>
+        <h2 id="ov-title">…</h2>
+        <p id="ov-text"></p>
         <div class="progress" id="progress"><span></span></div>
       </div>
     </div>
@@ -102,51 +106,51 @@
 
   <div class="panels">
     <section class="panel">
-      <div class="head"><h3>Requests</h3><span class="label" id="count">0 requests</span><span class="spacer"></span><button class="chip" type="button" id="clear">Clear</button></div>
+      <div class="head"><h3 data-fr="Requêtes">Requests</h3><span class="label" id="count">0 requests</span><span class="spacer"></span><button class="chip" type="button" id="clear" data-fr="Effacer">Clear</button></div>
       <ul class="reqs" id="reqs"></ul>
       <pre class="raw" id="detail" hidden></pre>
     </section>
     <section class="panel">
-      <div class="head"><h3>Raw HTTP</h3><span class="label">like telnet localhost 8080</span></div>
+      <div class="head"><h3 data-fr="HTTP brut">Raw HTTP</h3><span class="label" data-fr="comme telnet localhost 8080">like telnet localhost 8080</span></div>
       <div class="presets" id="presets">
         <button class="chip" type="button" data-raw="DELETE /Home HTTP/1.1|Host: localhost:8080||">405 <b>DELETE</b></button>
-        <button class="chip" type="button" data-raw="POST /signin HTTP/1.1|Host: localhost:8080||">411 <b>POST, no body</b></button>
-        <button class="chip" type="button" data-raw="POST /cgi-bin/guestbook.js HTTP/1.1|Host: localhost:8080|Transfer-Encoding: chunked||9|name=Chun|D|k&amp;message=hi!|0||">Chunked <b>POST to CGI</b></button>
-        <button class="chip" type="button" data-raw="POST /signup HTTP/1.1|Host: localhost:8080|Content-Type: application/x-www-form-urlencoded|Content-Length: 44||username=sam&amp;email=s@42.fr&amp;password=hunter22">Sign up <b>Set-Cookie</b></button>
-        <button class="chip" type="button" data-raw="GET /Home HTTP/1.0||">HTTP/1.0 <b>no Host</b></button>
-        <button class="chip" type="button" data-raw="GET /Home||">No version <b>GET /Home</b></button>
+        <button class="chip" type="button" data-raw="POST /signin HTTP/1.1|Host: localhost:8080||">411 <b data-fr="POST, sans corps">POST, no body</b></button>
+        <button class="chip" type="button" data-raw="POST /cgi-bin/guestbook.js HTTP/1.1|Host: localhost:8080|Transfer-Encoding: chunked||9|name=Chun|D|k&amp;message=hi!|0||">Chunked <b data-fr="POST vers le CGI">POST to CGI</b></button>
+        <button class="chip" type="button" data-raw="POST /signup HTTP/1.1|Host: localhost:8080|Content-Type: application/x-www-form-urlencoded|Content-Length: 44||username=sam&amp;email=s@42.fr&amp;password=hunter22"><span data-fr="Inscription">Sign up</span> <b>Set-Cookie</b></button>
+        <button class="chip" type="button" data-raw="GET /Home HTTP/1.0||">HTTP/1.0 <b data-fr="sans Host">no Host</b></button>
+        <button class="chip" type="button" data-raw="GET /Home||"><span data-fr="Sans version">No version</span> <b>GET /Home</b></button>
       </div>
-      <textarea class="req" id="raw" spellcheck="false" aria-label="Raw HTTP request">GET / HTTP/1.1
+      <textarea class="req" id="raw" spellcheck="false" aria-label="Raw HTTP request" data-fr-aria-label="Requête HTTP brute">GET / HTTP/1.1
 Host: localhost:8080
 
 </textarea>
-      <div class="row"><button class="btn primary" id="send" type="button">Send</button><span class="note">Each line ends with CRLF. The response appears below.</span></div>
+      <div class="row"><button class="btn primary" id="send" type="button" data-fr="Envoyer">Send</button><span class="note" data-fr="Chaque ligne se termine par CRLF. La réponse s’affiche en dessous.">Each line ends with CRLF. The response appears below.</span></div>
       <pre class="raw" id="rawres" hidden></pre>
     </section>
   </div>
 
   <div class="field">
-    <span class="label">Server output</span>
+    <span class="label" data-fr="Sortie du serveur">Server output</span>
     <pre class="log serverlog" id="log"></pre>
   </div>
 
   <div class="about">
     <section>
-      <h3>The project</h3>
-      <p>An HTTP/1.1 server written from scratch in C++98 by a team of three: a configuration file in the spirit of nginx, one non-blocking <code>epoll</code> loop for every connection, static files, uploads, <code>DELETE</code>, custom error pages, chunked transfer and CGI. The darts website you browse above was made by the team to test it.</p>
+      <h3 data-fr="Le projet">The project</h3>
+      <p data-fr="Un serveur HTTP/1.1 écrit de zéro en C++98 à trois : un fichier de configuration dans l’esprit de nginx, une seule boucle <code>epoll</code> non bloquante pour toutes les connexions, fichiers statiques, uploads, <code>DELETE</code>, pages d’erreur personnalisées, transfert chunked et CGI. Le site de fléchettes que vous parcourez ci-dessus a été fait par l’équipe pour le tester.">An HTTP/1.1 server written from scratch in C++98 by a team of three: a configuration file in the spirit of nginx, one non-blocking <code>epoll</code> loop for every connection, static files, uploads, <code>DELETE</code>, custom error pages, chunked transfer and CGI. The darts website you browse above was made by the team to test it.</p>
     </section>
     <section>
-      <h3>What is real</h3>
+      <h3 data-fr="Ce qui est réel">What is real</h3>
       <ul>
-        <li>every page, image and redirect above is answered by webserv’s own code, from <code>www/config</code></li>
-        <li>CGI scripts are started with <code>fork()</code> + <code>execve()</code>, their output read from a pipe and sent back chunked</li>
-        <li>accounts live in the server’s memory, as in the original</li>
-        <li>CGI scripts are JavaScript here, because there is no Python in the browser; one <code>/cgi-bin/</code> location is added to the config for them</li>
+        <li data-fr="chaque page, image et redirection ci-dessus est servie par le propre code de webserv, depuis <code>www/config</code>">every page, image and redirect above is answered by webserv’s own code, from <code>www/config</code></li>
+        <li data-fr="les scripts CGI sont lancés avec <code>fork()</code> + <code>execve()</code>, leur sortie est lue dans un pipe et renvoyée en chunked">CGI scripts are started with <code>fork()</code> + <code>execve()</code>, their output read from a pipe and sent back chunked</li>
+        <li data-fr="les comptes vivent dans la mémoire du serveur, comme dans l’original">accounts live in the server’s memory, as in the original</li>
+        <li data-fr="les scripts CGI sont en JavaScript ici, car il n’y a pas de Python dans le navigateur ; une location <code>/cgi-bin/</code> est ajoutée à la configuration pour eux">CGI scripts are JavaScript here, because there is no Python in the browser; one <code>/cgi-bin/</code> location is added to the config for them</li>
       </ul>
     </section>
     <section>
-      <h3>Under the hood</h3>
-      <p>The C++ code is compiled to WebAssembly unchanged. A small kernel in JavaScript gives it sockets, <code>epoll</code>, pipes and processes on a virtual network. A Service Worker catches the requests made by the frame above and the page turns each into a raw HTTP request on <code>localhost:8080</code>, exactly the bytes shown in the list.</p>
+      <h3 data-fr="Sous le capot">Under the hood</h3>
+      <p data-fr="Le code C++ est compilé en WebAssembly sans modification. Un petit noyau en JavaScript lui fournit sockets, <code>epoll</code>, pipes et processus sur un réseau virtuel. Un Service Worker intercepte les requêtes du cadre ci-dessus et la page transforme chacune en requête HTTP brute sur <code>localhost:8080</code>, exactement les octets affichés dans la liste.">The C++ code is compiled to WebAssembly unchanged. A small kernel in JavaScript gives it sockets, <code>epoll</code>, pipes and processes on a virtual network. A Service Worker catches the requests made by the frame above and the page turns each into a raw HTTP request on <code>localhost:8080</code>, exactly the bytes shown in the list.</p>
     </section>
   </div>
 </main>
@@ -158,6 +162,7 @@ Host: localhost:8080
 (function () {
   'use strict';
   const $ = (id) => document.getElementById(id);
+  const T = I18N.t;
   const ROOT = '/srv/webserv';
   const PORT = 8080;
   const SCOPE = 'games/webserv/net/';
@@ -177,6 +182,8 @@ Host: localhost:8080
     $('ov-text').textContent = text;
     $('progress').hidden = state !== 'loading';
   }
+  $('ov-title').textContent = T('Starting webserv', 'Démarrage de webserv');
+  $('ov-text').textContent = T('Downloading the server and its website…', 'Téléchargement du serveur et de son site…');
   const bar = (f) => { $('progress').firstElementChild.style.width = Math.round(f * 100) + '%'; };
 
   // ---------------- server output (ANSI colours -> spans)
@@ -288,8 +295,11 @@ Host: localhost:8080
     li.addEventListener('keydown', (e) => { if (e.key === 'Enter') select(x, li); });
     list.appendChild(li);
     list.scrollTop = list.scrollHeight;
-    $('count').textContent = exchanges.length + (exchanges.length === 1 ? ' request' : ' requests');
+    countLabel();
   }
+  function countLabel() { const n = exchanges.length; $('count').textContent = n + (n === 1 ? T(' request', ' requête') : T(' requests', ' requêtes')); }
+  countLabel();
+  I18N.onChange(countLabel);
   function fmtSize(n) { return n < 1024 ? n + ' B' : (n / 1024).toFixed(n < 10240 ? 1 : 0) + ' kB'; }
   function rawView(bytes, limit) {
     const end = bytes.length;
@@ -313,9 +323,9 @@ Host: localhost:8080
     li.setAttribute('aria-selected', 'true');
     const d = $('detail');
     d.hidden = false;
-    d.innerHTML = `<span class="dim">── request (${x.origin}) ──</span>\n${rawView(x.raw, 1500)}\n\n<span class="dim">── response · ${x.res.ms} ms ──</span>\n${x.res.ok ? rawView(x.res.raw, 1200) : '<span class="dim">no response' + (x.res.timedOut ? ' (timeout)' : '') + '</span>'}`;
+    d.innerHTML = `<span class="dim">── ${T('request', 'requête')} (${x.origin}) ──</span>\n${rawView(x.raw, 1500)}\n\n<span class="dim">── ${T('response', 'réponse')} · ${x.res.ms} ms ──</span>\n${x.res.ok ? rawView(x.res.raw, 1200) : '<span class="dim">' + T('no response', 'pas de réponse') + (x.res.timedOut ? ' (timeout)' : '') + '</span>'}`;
   }
-  $('clear').addEventListener('click', () => { list.innerHTML = ''; exchanges.length = 0; $('detail').hidden = true; $('count').textContent = '0 requests'; });
+  $('clear').addEventListener('click', () => { list.innerHTML = ''; exchanges.length = 0; $('detail').hidden = true; countLabel(); });
 
   // ---------------- raw console
   document.querySelectorAll('#presets .chip').forEach((b) => b.addEventListener('click', () => {
@@ -328,11 +338,11 @@ Host: localhost:8080
     const raw = enc.encode(text.endsWith('\r\n') || text.includes('\r\n\r\n') ? text : text + '\r\n');
     const out = $('rawres');
     out.hidden = false;
-    out.innerHTML = '<span class="dim">waiting for webserv…</span>';
+    out.innerHTML = '<span class="dim">' + T('waiting for webserv…', 'en attente de webserv…') + '</span>';
     const res = await HttpClient.exchange(sys.net, PORT, raw, { timeout: 4000 });
     keepCookies(res);
     record(raw, res, 'raw console');
-    out.innerHTML = res.raw.length ? rawView(res.raw, 4000) : `<span class="dim">${res.timedOut ? 'No complete response after 4 s: webserv is still waiting for the rest of the request.' : 'The connection was closed without a response.'}</span>`;
+    out.innerHTML = res.raw.length ? rawView(res.raw, 4000) : `<span class="dim">${res.timedOut ? T('No complete response after 4 s: webserv is still waiting for the rest of the request.', 'Pas de réponse complète après 4 s : webserv attend encore la suite de la requête.') : T('The connection was closed without a response.', 'La connexion a été fermée sans réponse.')}</span>`;
   }
   $('send').addEventListener('click', sendRaw);
   $('raw').addEventListener('keydown', (e) => { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); sendRaw(); } });
@@ -356,7 +366,7 @@ Host: localhost:8080
   document.querySelectorAll('.quick .chip').forEach((b) => b.addEventListener('click', () => go(b.dataset.go)));
 
   async function startWorker() {
-    if (!('serviceWorker' in navigator)) throw new Error('This browser has no Service Workers, which the page needs to show the site.');
+    if (!('serviceWorker' in navigator)) throw new Error(T('This browser has no Service Workers, which the page needs to show the site.', 'Ce navigateur n’a pas de Service Workers, nécessaires pour afficher le site.'));
     const reg = await navigator.serviceWorker.register('games/webserv/sw.js', { scope: SCOPE });
     const w = reg.active || reg.waiting || reg.installing;
     if (w && w.state !== 'activated') {
@@ -374,23 +384,23 @@ Host: localhost:8080
         startWorker(),
       ]);
       bar(0.85);
-      $('ov-text').textContent = 'Starting the server on localhost:8080…';
+      $('ov-text').textContent = T('Starting the server on localhost:8080…', 'Démarrage du serveur sur localhost:8080…');
       let listening;
       const ready = new Promise((r) => { listening = r; });
       sys = Posix.create({
         fs: makeFs(site), commands: PosixCommands, programs: { webserv: module },
         onListen: (port) => { if (port === PORT) listening(); },
-        onSessionEnd: (status) => show('error', 'webserv stopped', 'The server exited with status ' + ((status >> 8) & 0xff) + (status & 0x7f ? ' (signal ' + (status & 0x7f) + ')' : '') + '. Reload the page to start it again.'),
+        onSessionEnd: (status) => show('error', T('webserv stopped', 'webserv s’est arrêté'), T('The server exited with status ', 'Le serveur s’est terminé avec le code ') + ((status >> 8) & 0xff) + (status & 0x7f ? ' (signal ' + (status & 0x7f) + ')' : '') + T('. Reload the page to start it again.', '. Rechargez la page pour le relancer.')),
       });
       log(enc.encode('$ ./webserv web.conf\n'));
       await sys.spawnRoot('webserv', ['./webserv', 'web.conf'], ['PWD=' + ROOT, 'PATH=/usr/bin:/bin', 'HOME=/tmp'], ROOT, { stdout: log, stderr: log });
-      await Promise.race([ready, new Promise((_, no) => setTimeout(() => no(new Error('webserv did not start listening')), 10000))]);
+      await Promise.race([ready, new Promise((_, no) => setTimeout(() => no(new Error(T('webserv did not start listening', 'webserv n’a pas commencé à écouter'))), 10000))]);
       bar(1);
       show(null);
       go(new URLSearchParams(location.search).get('path') || '/Dart');
     } catch (e) {
       console.error(e);
-      show('error', 'Could not start webserv', String(e.message || e));
+      show('error', T('Could not start webserv', 'Impossible de démarrer webserv'), String(e.message || e));
     }
   })();
   window.webserv = { get sys() { return sys; }, exchanges, prefix };

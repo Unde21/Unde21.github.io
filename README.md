@@ -10,6 +10,7 @@ A static site (GitHub Pages) that presents my 42 projects and makes them playabl
 - `kwizo.html`: the real Kwizo app (Expo web build) and its real NestJS backend, both running in the visitor's tab (see `tools/kwizo/README.md`)
 - `philosophers.html`: dining philosophers simulation (the program runs in a Web Worker started by `games/mlxweb/wasi-worker.js`)
 - `games/`: programs compiled to WebAssembly, with their files (maps, textures, sounds)
+- `i18n.js`: English / French switch for every page (French text in `data-fr` attributes, choice kept in the browser)
 - `coi-serviceworker.js`: enables cross-origin isolation on GitHub Pages (needed by the Cub3D bonus threads)
 - `tools/mlxweb/`: the porting layer (MiniLibX for canvas, WASI runtime, threads, sound) and the build scripts
 

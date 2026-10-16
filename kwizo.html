@@ -3,10 +3,12 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Kwizo · Real-time multiplayer quiz</title>
+<title data-fr="Kwizo · Quiz multijoueur en temps réel">Kwizo · Real-time multiplayer quiz</title>
 <meta name="claude:viewport-fit-sides" content="cover">
+<script src="i18n.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Big+Shoulders+Display:wght@700;800&family=Martian+Mono:wght@400;500;600&display=swap">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500..800&family=Instrument+Sans:wght@400..700&family=JetBrains+Mono:wght@400;500;600&display=swap">
 <link rel="stylesheet" href="site.css">
 <link rel="stylesheet" href="game.css">
 <style>
@@ -55,27 +57,27 @@
 <body>
 <header class="bar">
   <div class="wrap">
-    <a class="back" href="index.html">← Projects</a>
+    <a class="back" href="index.html" data-fr="← Projets">← Projects</a>
     <h1>Kwizo</h1>
     <span class="label">ft_transcendence · Expo · NestJS · Socket.io</span>
     <span class="spacer"></span>
-    <span class="label">private repository · team of four</span>
+    <span class="label" data-fr="dépôt privé · équipe de quatre">private repository · team of four</span>
   </div>
 </header>
 
 <main class="wrap play">
   <div class="layout">
     <div class="device-col">
-      <div class="views" role="group" aria-label="View">
-        <button class="tab" type="button" data-view="phone" aria-pressed="true">Phone</button>
-        <button class="tab" type="button" data-view="desktop" aria-pressed="false">Desktop</button>
+      <div class="views" role="group" aria-label="View" data-fr-aria-label="Vue">
+        <button class="tab" type="button" data-view="phone" aria-pressed="true" data-fr="Téléphone">Phone</button>
+        <button class="tab" type="button" data-view="desktop" aria-pressed="false" data-fr="Ordinateur">Desktop</button>
       </div>
       <div class="phone" id="device">
         <div class="frame" id="frame">
-          <iframe id="app" title="Kwizo app" allow="clipboard-write"></iframe>
+          <iframe id="app" title="Kwizo app" data-fr-title="Appli Kwizo" allow="clipboard-write"></iframe>
           <div class="boot" id="boot">
             <h2>Kwizo</h2>
-            <p id="boot-text">Starting the backend: NestJS, Prisma and PostgreSQL, compiled to run in this tab…</p>
+            <p id="boot-text"></p>
             <div class="progress"><span></span></div>
           </div>
         </div>
@@ -84,51 +86,51 @@
 
     <div class="side">
       <section class="card">
-        <h3>Log in</h3>
-        <p>Tap <b>Continue with Email</b> and use one of the demo accounts (or create your own).</p>
+        <h3 data-fr="Connexion">Log in</h3>
+        <p data-fr="Touchez <b>Continuer avec Email</b> et utilisez un des comptes de démo (ou créez le vôtre).">Tap <b>Continue with Email</b> and use one of the demo accounts (or create your own).</p>
         <dl class="accounts">
           <div><dt>email</dt><dd id="acc-email">quizmaster@kwizo.demo</dd><button class="copy" type="button" data-copy="acc-email">copy</button></div>
-          <div><dt>password</dt><dd id="acc-pass">Password!0</dd><button class="copy" type="button" data-copy="acc-pass">copy</button></div>
+          <div><dt data-fr="mot de passe">password</dt><dd id="acc-pass">Password!0</dd><button class="copy" type="button" data-copy="acc-pass">copy</button></div>
         </dl>
-        <p class="state wait" id="status">Backend starting…</p>
+        <p class="state wait" id="status"></p>
       </section>
 
       <section class="card">
-        <h3>Play against others</h3>
-        <p id="lobby-text">In <b>Quiz</b>, open a quiz’s menu (⋮), <b>Publish</b> it if it shows a red dot, then <b>Host Quiz</b> with <b>Participation</b> on. In the lobby, add players here, then press <b>Start Session</b>.</p>
+        <h3 data-fr="Jouer contre d’autres">Play against others</h3>
+        <p id="lobby-text"></p>
         <div class="row">
-          <button class="btn primary" type="button" id="add-bot" disabled>Add a player</button>
-          <button class="btn" type="button" id="add-bots" disabled>Add 3</button>
+          <button class="btn primary" type="button" id="add-bot" disabled data-fr="Ajouter un joueur">Add a player</button>
+          <button class="btn" type="button" id="add-bots" disabled data-fr="En ajouter 3">Add 3</button>
         </div>
         <ul class="players" id="players"></ul>
       </section>
 
       <section class="card">
-        <h3>Your data</h3>
-        <p>Everything you create stays in this browser (IndexedDB). Start again with the original data at any time.</p>
-        <div class="row"><button class="btn" type="button" id="reset">Reset the demo</button></div>
+        <h3 data-fr="Vos données">Your data</h3>
+        <p data-fr="Tout ce que vous créez reste dans ce navigateur (IndexedDB). Repartez des données d’origine quand vous voulez.">Everything you create stays in this browser (IndexedDB). Start again with the original data at any time.</p>
+        <div class="row"><button class="btn" type="button" id="reset" data-fr="Réinitialiser la démo">Reset the demo</button></div>
       </section>
     </div>
   </div>
 
   <div class="about">
     <section>
-      <h3>The project</h3>
-      <p>Kwizo is our ft_transcendence: a real-time multiplayer quiz, as a web app and a mobile app built with Expo, made by a team of four. On Android it installs as an APK; it runs on iOS too, but it is not on the App Store because we chose not to pay for Apple's developer program. I was Product Owner and front-end developer. Create quizzes, groups and invitations, host a session with a join code, and play live rounds with streaks, a fastest mode and leaderboards, in five languages.</p>
+      <h3 data-fr="Le projet">The project</h3>
+      <p data-fr="Kwizo est notre ft_transcendence : un quiz multijoueur en temps réel, en appli web et en appli mobile construite avec Expo, réalisé à quatre. Sur Android, il s’installe en APK ; il tourne aussi sur iOS, mais n’est pas sur l’App Store car nous avons choisi de ne pas payer le programme développeur d’Apple. J’étais Product Owner et développeur front-end. Créez des quiz, des groupes et des invitations, lancez une session avec un code, et jouez des manches en direct avec séries, mode le plus rapide et classements, en cinq langues.">Kwizo is our ft_transcendence: a real-time multiplayer quiz, as a web app and a mobile app built with Expo, made by a team of four. On Android it installs as an APK; it runs on iOS too, but it is not on the App Store because we chose not to pay for Apple's developer program. I was Product Owner and front-end developer. Create quizzes, groups and invitations, host a session with a join code, and play live rounds with streaks, a fastest mode and leaderboards, in five languages.</p>
     </section>
     <section>
-      <h3>What runs here</h3>
+      <h3 data-fr="Ce qui tourne ici">What runs here</h3>
       <ul>
-        <li>the real Expo app, built for the web from its source</li>
-        <li>the real NestJS backend, in this tab: REST API, JWT auth, Socket.io gateways and the game engine</li>
-        <li>PostgreSQL itself (PGlite, compiled to WebAssembly) with the project’s Prisma migrations</li>
-        <li>data created by the project’s own seed script: 134 users, 36 groups, 30 quizzes</li>
-        <li>OAuth sign-in (42, Google, GitHub) needs real OAuth apps, so the demo uses email accounts</li>
+        <li data-fr="la vraie appli Expo, construite pour le web depuis ses sources">the real Expo app, built for the web from its source</li>
+        <li data-fr="le vrai backend NestJS, dans cet onglet : API REST, authentification JWT, gateways Socket.io et moteur de jeu">the real NestJS backend, in this tab: REST API, JWT auth, Socket.io gateways and the game engine</li>
+        <li data-fr="PostgreSQL lui-même (PGlite, compilé en WebAssembly) avec les migrations Prisma du projet">PostgreSQL itself (PGlite, compiled to WebAssembly) with the project’s Prisma migrations</li>
+        <li data-fr="des données créées par le script de seed du projet : 134 utilisateurs, 36 groupes, 30 quiz">data created by the project’s own seed script: 134 users, 36 groups, 30 quizzes</li>
+        <li data-fr="la connexion OAuth (42, Google, GitHub) demande de vraies applis OAuth, donc la démo utilise des comptes email">OAuth sign-in (42, Google, GitHub) needs real OAuth apps, so the demo uses email accounts</li>
       </ul>
     </section>
     <section>
-      <h3>Under the hood</h3>
-      <p>The backend is compiled with tsc and bundled for the browser, with a virtual <code>http</code> module that Express and Socket.io attach to. The app’s requests to its API never leave the tab: a small XMLHttpRequest bridge hands them to that server, and Socket.io uses long-polling over the same bridge. The extra players are bots following the protocol of the team’s realtime test client.</p>
+      <h3 data-fr="Sous le capot">Under the hood</h3>
+      <p data-fr="Le backend est compilé avec tsc et empaqueté pour le navigateur, avec un module <code>http</code> virtuel auquel Express et Socket.io se branchent. Les requêtes de l’appli vers son API ne quittent jamais l’onglet : un petit pont XMLHttpRequest les remet à ce serveur, et Socket.io passe en long-polling par le même pont. Les joueurs ajoutés sont des bots qui suivent le protocole du client de test temps réel de l’équipe.">The backend is compiled with tsc and bundled for the browser, with a virtual <code>http</code> module that Express and Socket.io attach to. The app’s requests to its API never leave the tab: a small XMLHttpRequest bridge hands them to that server, and Socket.io uses long-polling over the same bridge. The extra players are bots following the protocol of the team’s realtime test client.</p>
     </section>
   </div>
 </main>
@@ -137,6 +139,28 @@
 (function () {
   'use strict';
   const $ = (id) => document.getElementById(id);
+  const T = I18N.t;
+  // the app keeps its language in localStorage ('user-language', AsyncStorage on the web): follow the site
+  const syncAppLang = () => { try { localStorage.setItem('user-language', I18N.lang); } catch (e) { /* storage blocked */ } };
+  syncAppLang();
+  // text written by this script, redrawn when the language changes
+  let backend = 'starting', slow = false, lobbyCode = null, lobbyError = null;
+  function texts() {
+    $('boot-text').textContent = backend === 'error'
+      ? T('The backend could not start in this browser. Try a recent Chrome, Edge, Firefox or Safari.', 'Le backend n’a pas pu démarrer dans ce navigateur. Essayez un Chrome, Edge, Firefox ou Safari récent.')
+      : slow
+        ? T('This is taking long. A slow connection may still be downloading the backend (about 40 MB the first time); otherwise reload the page.', 'C’est long. Une connexion lente télécharge peut-être encore le backend (environ 40 Mo la première fois) ; sinon, rechargez la page.')
+        : T('Starting the backend: NestJS, Prisma and PostgreSQL, compiled to run in this tab…', 'Démarrage du backend : NestJS, Prisma et PostgreSQL, compilés pour tourner dans cet onglet…');
+    $('status').textContent = { starting: T('Backend starting…', 'Démarrage du backend…'), ready: T('Backend running in this tab.', 'Backend en marche dans cet onglet.'), error: T('Backend failed to start.', 'Le backend n’a pas démarré.') }[backend];
+    $('status').className = 'state ' + (backend === 'ready' ? 'ok' : 'wait');
+    $('lobby-text').innerHTML = lobbyError
+      ? T('Could not add a player: ', 'Impossible d’ajouter un joueur : ') + lobbyError
+      : lobbyCode
+        ? T(`Lobby <b>${lobbyCode}</b> is open. Add players, then press <b>Start Session</b> in the app.`, `Le salon <b>${lobbyCode}</b> est ouvert. Ajoutez des joueurs, puis appuyez sur <b>Démarrer la Session</b> dans l’appli.`)
+        : T('In <b>Quiz</b>, open a quiz’s menu (⋮), <b>Publish</b> it if it shows a red dot, then <b>Host Quiz</b> with <b>Participation</b> on. In the lobby, add players here, then press <b>Start Session</b>.', 'Dans <b>Quiz</b>, ouvrez le menu d’un quiz (⋮), <b>publiez-le</b> s’il affiche un point rouge, puis <b>Héberger le Quiz</b> avec <b>Participation</b> activée. Dans le salon, ajoutez des joueurs ici, puis appuyez sur <b>Démarrer la Session</b>.');
+    document.querySelectorAll('[data-copy]').forEach((b) => { if (!b.dataset.busy) b.textContent = T('copy', 'copier'); });
+  }
+  I18N.onChange(() => { syncAppLang(); texts(); });
   const APP = 'games/kwizo/app/';
   const VIEWS = { phone: { w: 390, h: 844 }, desktop: { w: 1280, h: 800 } };
   let view = 'phone';
@@ -165,18 +189,19 @@
   // backend status from the app frame (boot.js)
   window.addEventListener('message', (e) => {
     if (!e.data || e.data.kwizo !== 'status') return;
-    if (e.data.status === 'ready') { $('boot').hidden = true; $('status').textContent = 'Backend running in this tab.'; $('status').className = 'state ok'; }
-    if (e.data.status === 'error') { $('boot-text').textContent = 'The backend could not start in this browser. Try a recent Chrome, Edge, Firefox or Safari.'; $('status').textContent = 'Backend failed to start.'; }
+    if (e.data.status === 'ready') { $('boot').hidden = true; backend = 'ready'; texts(); }
+    if (e.data.status === 'error') { backend = 'error'; texts(); }
   });
   app.src = APP;
   // if nothing answers, say so instead of loading forever
   setTimeout(() => {
     if ($('boot').hidden) return;
-    $('boot-text').textContent = 'This is taking long. A slow connection may still be downloading the backend (about 40 MB the first time); otherwise reload the page.';
+    slow = true; texts();
   }, 45000);
+  texts();
 
   document.querySelectorAll('[data-copy]').forEach((b) => b.addEventListener('click', async () => {
-    try { await navigator.clipboard.writeText($(b.dataset.copy).textContent); b.textContent = 'copied'; setTimeout(() => { b.textContent = 'copy'; }, 1200); } catch (e) { /* no clipboard */ }
+    try { await navigator.clipboard.writeText($(b.dataset.copy).textContent); b.dataset.busy = '1'; b.textContent = T('copied', 'copié'); setTimeout(() => { delete b.dataset.busy; texts(); }, 1200); } catch (e) { /* no clipboard */ }
   }));
 
   // bots for the current lobby
@@ -200,13 +225,13 @@
     return w.__kwizoBots;
   }
   function renderPlayers(list) {
-    $('players').innerHTML = list.map((b) => `<li><span>${b.name}</span><span>${b.state === 'joining' ? 'joining…' : b.score + ' pts'}</span></li>`).join('');
+    $('players').innerHTML = list.map((b) => `<li><span>${b.name}</span><span>${b.state === 'joining' ? T('joining…', 'arrive…') : b.score + ' pts'}</span></li>`).join('');
   }
   async function add(n) {
     const code = joinCode();
     if (!code) return;
     const b = await bots();
-    for (let i = 0; i < n; i++) b.add(code).catch((e) => { $('lobby-text').textContent = 'Could not add a player: ' + (e.message || e); });
+    for (let i = 0; i < n; i++) b.add(code).catch((e) => { lobbyError = String(e.message || e).replace(/</g, '&lt;'); texts(); });
   }
   $('add-bot').addEventListener('click', () => add(1));
   $('add-bots').addEventListener('click', () => add(3));
@@ -216,7 +241,7 @@
     $('add-bot').disabled = $('add-bots').disabled = !code;
     if (code !== lastCode) {
       lastCode = code;
-      if (code) $('lobby-text').innerHTML = `Lobby <b>${code}</b> is open. Add players, then press <b>Start Session</b> in the app.`;
+      lobbyCode = code; lobbyError = null; texts();
     }
   }, 700);
 
@@ -228,7 +253,7 @@
       for (const k of Object.keys(localStorage)) if (/^kwizo-demo|accessToken|refreshToken/.test(k)) localStorage.removeItem(k);
       for (const name of ['/pglite/kwizo-demo', 'kwizo-demo-files']) await new Promise((resolve) => { const r = indexedDB.deleteDatabase(name); r.onsuccess = r.onerror = r.onblocked = resolve; });
     } catch (e) { /* ignore */ }
-    $('boot').hidden = false; $('status').textContent = 'Backend starting…'; $('status').className = 'state wait';
+    $('boot').hidden = false; backend = 'starting'; slow = false; texts();
     app.src = APP;
   });
 })();

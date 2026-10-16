@@ -3,16 +3,18 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Inception · Docker infrastructure</title>
+<title data-fr="Inception · Infrastructure Docker">Inception · Docker infrastructure</title>
 <meta name="claude:viewport-fit-sides" content="cover">
+<script src="i18n.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Big+Shoulders+Display:wght@700;800&family=Martian+Mono:wght@400;500;600&display=swap">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500..800&family=Instrument+Sans:wght@400..700&family=JetBrains+Mono:wght@400;500;600&display=swap">
 <link rel="stylesheet" href="site.css">
 <link rel="stylesheet" href="game.css">
 <style>
   :root {
-    --d-bg: #0b0f0e; --d-ink: #dfe7e4; --d-muted: #7d8c88; --d-line: #26312e; --d-card: #131a18;
-    --d-teal: #43c9bb; --d-amber: #f0a050; --d-blue: #6ea8fe; --d-violet: #b892f0; --d-red: #e5534b;
+    --d-bg: #08080d; --d-ink: #ebe8f2; --d-muted: #8a889a; --d-line: #2a2a38; --d-card: #13131c;
+    --d-teal: #a493ff; --d-amber: #ff7a4a; --d-blue: #6ea8fe; --d-violet: #b892f0; --d-red: #e5534b;
   }
   .modes { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; }
   .tab {
@@ -50,9 +52,9 @@
   .verdict { font: 600 0.75rem/1.3 var(--mono); }
   .code { margin: 0; font: 400 0.7rem/1.55 var(--mono); background: var(--stage); color: var(--stage-ink); border-radius: var(--radius); padding: 0.6rem 0; max-height: 30rem; overflow: auto; counter-reset: ln; }
   .code .l { display: block; padding: 0 0.8rem 0 0; white-space: pre; }
-  .code .l::before { counter-increment: ln; content: counter(ln); display: inline-block; width: 2.6rem; padding-right: 0.8rem; text-align: right; color: #56625f; user-select: none; }
-  .code .l.hl { background: rgba(67, 201, 187, 0.16); box-shadow: inset 3px 0 0 #43c9bb; }
-  .code .c { color: #6f7f7b; } .code .kw { color: #f0a050; } .code .s { color: #9ee6b8; } .code .v { color: #b892f0; }
+  .code .l::before { counter-increment: ln; content: counter(ln); display: inline-block; width: 2.6rem; padding-right: 0.8rem; text-align: right; color: #5a5868; user-select: none; }
+  .code .l.hl { background: rgba(255, 107, 61, 0.14); box-shadow: inset 3px 0 0 #ff6b3d; }
+  .code .c { color: #77758a; } .code .kw { color: #ff9a6b; } .code .s { color: #9ee6b8; } .code .v { color: #b8a8ff; }
   .files { display: flex; flex-wrap: wrap; gap: 0.35rem; }
   .files button { font: 500 0.7rem/1 var(--mono); padding: 0.5em 0.7em; border-radius: 4px; border: 1px solid var(--line); background: transparent; color: var(--ink); cursor: pointer; }
   .files button[aria-pressed="true"] { border-color: var(--accent); color: var(--accent); }
@@ -66,21 +68,21 @@
   .node .t { fill: var(--d-ink); font-size: 16px; font-weight: 600; }
   .node .u { fill: var(--d-muted); font-size: 11px; }
   .node.bonus rect { stroke-dasharray: 5 4; }
-  .node.vol rect { fill: #10161a; }
+  .node.vol rect { fill: #101018; }
   .node.sel rect { stroke: var(--d-teal); stroke-width: 2.5; }
-  .node.lit rect { stroke: var(--d-amber); stroke-width: 2.5; fill: #1c1a12; }
+  .node.lit rect { stroke: var(--d-amber); stroke-width: 2.5; fill: #1f1410; }
   .node.off { opacity: 0.5; }
-  .edge path { fill: none; stroke: #3a4844; stroke-width: 1.6; }
-  .edge.vol path { stroke-dasharray: 3 4; stroke: #33403c; }
-  .edge text { fill: #8d9b97; font-size: 11px; }
+  .edge path { fill: none; stroke: #3b3a4c; stroke-width: 1.6; }
+  .edge.vol path { stroke-dasharray: 3 4; stroke: #343344; }
+  .edge text { fill: #918fa3; font-size: 11px; }
   .edge.lit path { stroke: var(--d-amber); stroke-width: 2.6; }
   .edge.lit text { fill: var(--d-amber); }
   .edge.off { opacity: 0.4; }
-  .box { fill: none; stroke: #2c3835; stroke-width: 1.2; }
+  .box { fill: none; stroke: #2d2c3b; stroke-width: 1.2; }
   .box-label { fill: var(--d-muted); font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; }
-  .port rect { fill: #182320; stroke: var(--d-teal); }
+  .port rect { fill: #1a1726; stroke: var(--d-teal); }
   .port text { fill: var(--d-teal); font-size: 11px; font-weight: 600; }
-  .packet { fill: var(--d-amber); filter: drop-shadow(0 0 6px rgba(240, 160, 80, 0.9)); }
+  .packet { fill: var(--d-amber); filter: drop-shadow(0 0 6px rgba(255, 122, 74, 0.9)); }
   @media (max-width: 980px) { .side { grid-template-columns: minmax(0, 1fr); } }
   @media (max-width: 480px) { .urlbar span { font-size: 0.7rem; } }
 </style>
@@ -88,34 +90,34 @@
 <body>
 <header class="bar">
   <div class="wrap">
-    <a class="back" href="index.html">← Projects</a>
+    <a class="back" href="index.html" data-fr="← Projets">← Projects</a>
     <h1>Inception</h1>
     <span class="label">Docker Compose · nginx TLS · WordPress · MariaDB</span>
     <span class="spacer"></span>
-    <a class="btn" href="https://github.com/Unde21/Inception" target="_blank" rel="noopener">Code on GitHub</a>
+    <a class="btn" href="https://github.com/Unde21/Inception" target="_blank" rel="noopener" data-fr="Code sur GitHub">Code on GitHub</a>
   </div>
 </header>
 
 <main class="wrap play">
-  <div class="modes" role="tablist" aria-label="View">
-    <button class="tab" role="tab" id="tab-request" aria-selected="true">Follow a request</button>
-    <button class="tab" role="tab" id="tab-make" aria-selected="false">Replay <code>make</code></button>
-    <button class="tab" role="tab" id="tab-inspect" aria-selected="false">Inspect a container</button>
-    <span class="note">Every box and arrow comes from <code>docker-compose.yml</code>; click one to read its files.</span>
+  <div class="modes" role="tablist" aria-label="View" data-fr-aria-label="Vue">
+    <button class="tab" role="tab" id="tab-request" aria-selected="true" data-fr="Suivre une requête">Follow a request</button>
+    <button class="tab" role="tab" id="tab-make" aria-selected="false" data-fr="Rejouer <code>make</code>">Replay <code>make</code></button>
+    <button class="tab" role="tab" id="tab-inspect" aria-selected="false" data-fr="Inspecter un conteneur">Inspect a container</button>
+    <span class="note" data-fr="Chaque boîte et chaque flèche vient de <code>docker-compose.yml</code> ; cliquez dessus pour lire ses fichiers.">Every box and arrow comes from <code>docker-compose.yml</code>; click one to read its files.</span>
   </div>
 
   <div class="layout">
-    <div class="diagram" id="diagram"><svg id="svg" viewBox="0 0 1100 640" role="img" aria-label="Inception architecture diagram"></svg></div>
+    <div class="diagram" id="diagram"><svg id="svg" viewBox="0 0 1100 640" role="img" aria-label="Inception architecture diagram" data-fr-aria-label="Schéma de l’architecture Inception"></svg></div>
 
     <div class="side">
       <!-- request tracer -->
       <section class="card" id="panel-request">
-        <h3>Follow a request</h3>
-        <form class="urlbar" id="urlform"><span id="scheme">https://samaouch.42.fr</span><input id="path" value="/" spellcheck="false" autocomplete="off" aria-label="Path"><button class="btn" type="submit">Send</button></form>
+        <h3 data-fr="Suivre une requête">Follow a request</h3>
+        <form class="urlbar" id="urlform"><span id="scheme">https://samaouch.42.fr</span><input id="path" value="/" spellcheck="false" autocomplete="off" aria-label="Path" data-fr-aria-label="Chemin"><button class="btn" type="submit" data-fr="Envoyer">Send</button></form>
         <div class="chips" id="routes">
           <button class="chip" type="button" data-path="/">/</button>
           <button class="chip" type="button" data-path="/wp-login.php">/wp-login.php</button>
-          <button class="chip" type="button" data-path="/wp-content/themes/style.css">a static file</button>
+          <button class="chip" type="button" data-path="/wp-content/themes/style.css" data-fr="un fichier statique">a static file</button>
           <button class="chip" type="button" data-path="/home">/home</button>
           <button class="chip" type="button" data-path="/adminer">/adminer</button>
           <button class="chip" type="button" data-path="/cadvisor/">/cadvisor/</button>
@@ -124,15 +126,15 @@
         </div>
         <p class="verdict" id="verdict"></p>
         <ol class="steps" id="steps"></ol>
-        <div class="row"><button class="btn" type="button" id="replay">Replay</button><button class="btn" type="button" id="open-static" hidden>Open the page static-site serves</button></div>
+        <div class="row"><button class="btn" type="button" id="replay" data-fr="Rejouer">Replay</button><button class="btn" type="button" id="open-static" hidden data-fr="Ouvrir la page servie par static-site">Open the page static-site serves</button></div>
       </section>
 
       <!-- make replay -->
       <section class="card" id="panel-make" hidden>
-        <h3>What <code>make</code> does</h3>
-        <p>Step by step, from the Makefile and each container’s start script. <code>depends_on</code> only orders the starts, so WordPress waits for MariaDB itself.</p>
+        <h3 data-fr="Ce que fait <code>make</code>">What <code>make</code> does</h3>
+        <p data-fr="Étape par étape, d’après le Makefile et le script de démarrage de chaque conteneur. <code>depends_on</code> ne fait qu’ordonner les démarrages : WordPress attend donc MariaDB lui-même.">Step by step, from the Makefile and each container’s start script. <code>depends_on</code> only orders the starts, so WordPress waits for MariaDB itself.</p>
         <ol class="steps" id="make-steps"></ol>
-        <div class="row"><button class="btn primary" type="button" id="make-play">Play</button><button class="btn" type="button" id="make-next">Next step</button></div>
+        <div class="row"><button class="btn primary" type="button" id="make-play" data-fr="Lecture">Play</button><button class="btn" type="button" id="make-next" data-fr="Étape suivante">Next step</button></div>
       </section>
 
       <!-- inspector -->
@@ -149,24 +151,24 @@
     </div>
   </div>
 
-  <iframe class="preview" id="preview" title="The page served by the static-site container" hidden></iframe>
+  <iframe class="preview" id="preview" title="The page served by the static-site container" data-fr-title="La page servie par le conteneur static-site" hidden></iframe>
 
   <div class="about">
     <section>
-      <h3>The project</h3>
-      <p>A small infrastructure built with Docker Compose, one service per container, each image written from <code>debian:bookworm</code>: nginx as the only entry point (TLS 1.2/1.3 on port 443), WordPress on PHP-FPM, and MariaDB, with bind-mounted volumes and Docker secrets for every password. Bonus services: Redis cache, Adminer, cAdvisor, an FTP server and a static site.</p>
+      <h3 data-fr="Le projet">The project</h3>
+      <p data-fr="Une petite infrastructure construite avec Docker Compose, un service par conteneur, chaque image écrite à partir de <code>debian:bookworm</code> : nginx comme seul point d’entrée (TLS 1.2/1.3 sur le port 443), WordPress sur PHP-FPM et MariaDB, avec des volumes en bind mount et des Docker secrets pour chaque mot de passe. Services bonus : cache Redis, Adminer, cAdvisor, un serveur FTP et un site statique.">A small infrastructure built with Docker Compose, one service per container, each image written from <code>debian:bookworm</code>: nginx as the only entry point (TLS 1.2/1.3 on port 443), WordPress on PHP-FPM, and MariaDB, with bind-mounted volumes and Docker secrets for every password. Bonus services: Redis cache, Adminer, cAdvisor, an FTP server and a static site.</p>
     </section>
     <section>
-      <h3>How to read it</h3>
+      <h3 data-fr="Comment le lire">How to read it</h3>
       <ul>
-        <li>solid boxes are the mandatory services, dashed boxes the bonus ones</li>
-        <li>the request tracer reads the real <code>nginx.conf</code> and applies nginx’s rules: exact match, longest prefix, then regular expressions in order</li>
-        <li>the <code>make</code> replay quotes the Makefile and the <code>init.sh</code> scripts, line by line</li>
+        <li data-fr="les boîtes pleines sont les services obligatoires, les boîtes en pointillés les bonus">solid boxes are the mandatory services, dashed boxes the bonus ones</li>
+        <li data-fr="le traceur de requêtes lit le vrai <code>nginx.conf</code> et applique les règles de nginx : correspondance exacte, plus long préfixe, puis expressions régulières dans l’ordre">the request tracer reads the real <code>nginx.conf</code> and applies nginx’s rules: exact match, longest prefix, then regular expressions in order</li>
+        <li data-fr="le replay de <code>make</code> cite le Makefile et les scripts <code>init.sh</code>, ligne par ligne">the <code>make</code> replay quotes the Makefile and the <code>init.sh</code> scripts, line by line</li>
       </ul>
     </section>
     <section>
-      <h3>Why no live demo</h3>
-      <p>Docker needs a Linux kernel (namespaces, cgroups, overlay file systems), which a browser does not have. Instead, everything here is driven by the project’s own files, shown as they are in the repository.</p>
+      <h3 data-fr="Pourquoi pas de démo en direct">Why no live demo</h3>
+      <p data-fr="Docker a besoin d’un noyau Linux (namespaces, cgroups, systèmes de fichiers overlay), ce qu’un navigateur n’a pas. À la place, tout ici est piloté par les propres fichiers du projet, affichés tels qu’ils sont dans le dépôt.">Docker needs a Linux kernel (namespaces, cgroups, overlay file systems), which a browser does not have. Instead, everything here is driven by the project’s own files, shown as they are in the repository.</p>
     </section>
   </div>
 </main>
@@ -175,6 +177,7 @@
 (function () {
   'use strict';
   const $ = (id) => document.getElementById(id);
+  const T = I18N.t, L = I18N.L;
   const SRC = 'games/inception/src/';
   const REQ = 'srcs/requirements/';
   const NS = 'http://www.w3.org/2000/svg';
@@ -223,32 +226,35 @@
   const E = Object.fromEntries(edges.map((e) => [e.id, e]));
 
   const info = {
-    nginx: { files: ['nginx/Dockerfile', 'nginx/conf/nginx.conf'], text: 'The only entry point: it terminates TLS with a self-signed certificate made by openssl when the image is built, serves WordPress’s static files from the shared volume, and passes PHP to WordPress over FastCGI.', tags: ['debian:bookworm', 'EXPOSE 443', 'restart: always'] },
-    wordpress: { files: ['wordpress/Dockerfile', 'wordpress/tools/init.sh', 'wordpress/conf/www.conf'], text: 'PHP-FPM 8.2 listening on port 9000, no web server inside. On first start, wp-cli downloads WordPress 6.4.3, writes wp-config.php from the secrets, installs the site, an author account and the Redis cache plugin.', tags: ['debian:bookworm', 'EXPOSE 9000', 'depends_on: mariadb'] },
-    mariadb: { files: ['mariadb/Dockerfile', 'mariadb/tools/init.sh', 'mariadb/conf/mariadb.cnf'], text: 'The database. If the database folder does not exist yet, init.sh starts a temporary server, sets the root password and creates the WordPress database and user from the secrets, then runs mysqld_safe for good.', tags: ['debian:bookworm', 'EXPOSE 3306', 'volume: db_data'] },
-    redis: { files: ['bonus/redis/Dockerfile', 'bonus/redis/tools/init.sh'], text: 'Object cache for WordPress (WP_REDIS_HOST in wp-config.php), protected by a password read from a secret.', tags: ['bonus', 'redis-server', 'volume: redis_data'] },
-    adminer: { files: ['bonus/adminer/Dockerfile'], text: 'Adminer 4.17.1, a one-file PHP database admin, run with PHP’s built-in server on port 8080 and reached through nginx at /adminer.', tags: ['bonus', 'EXPOSE 8080', 'depends_on: mariadb'] },
-    cadvisor: { files: ['bonus/cadvisor/Dockerfile'], text: 'Google’s cAdvisor, reading the host’s /sys, /var/lib/docker and the Docker socket (read-only, privileged) to chart every container’s CPU, memory and network.', tags: ['bonus', 'EXPOSE 8084', 'privileged'] },
-    ftp: { files: ['bonus/ftp/Dockerfile', 'bonus/ftp/tools/init.sh', 'bonus/ftp/conf/vsftpd.conf'], text: 'vsftpd with one local user from the secrets, jailed in the WordPress volume, so files uploaded by FTP appear on the site. Passive mode uses ports 40000 to 40005.', tags: ['bonus', 'ports 21, 40000-40005', 'volume: wp_data'] },
-    'static-site': { files: ['bonus/static-site/Dockerfile', 'bonus/static-site/www/index.html', 'bonus/static-site/www/Global.css'], text: 'A static page in the Matrix style, served by Python’s http.server and reached through nginx at /home.', tags: ['bonus', 'EXPOSE 8042', 'python3'] },
-    wp_data: { files: ['docker-compose.yml'], key: 'volumes:', text: 'WordPress files, bind-mounted from the host. Shared by nginx (to serve static files), wordpress (PHP) and ftp.', tags: ['bind mount', 'nginx · wordpress · ftp'] },
-    db_data: { files: ['docker-compose.yml'], key: 'volumes:', text: 'MariaDB’s data directory, so the database survives docker compose down.', tags: ['bind mount', 'mariadb'] },
-    redis_data: { files: ['docker-compose.yml'], key: 'volumes:', text: 'Redis persistence directory.', tags: ['bind mount', 'redis'] },
-    secrets: { files: ['docker-compose.yml'], key: 'secrets:', text: 'Passwords and names live in files under srcs/secrets/ (not in the repository) and are mounted read-only in /run/secrets/ of the containers that list them. No password is written in a Dockerfile or in the environment.', tags: ['8 secrets', 'files, not env vars'] },
-    browser: { files: ['nginx/conf/nginx.conf'], text: 'samaouch.42.fr points to the VM. Only port 443 is published for the web, so every page goes through nginx.', tags: ['HTTPS only'] },
-    ftpclient: { files: ['bonus/ftp/conf/vsftpd.conf'], text: 'Port 21 and the passive range are published straight to the ftp container.', tags: ['FTP'] },
+    nginx: { files: ['nginx/Dockerfile', 'nginx/conf/nginx.conf'], text: { fr: 'Le seul point d’entrée : il termine le TLS avec un certificat auto-signé créé par openssl à la construction de l’image, sert les fichiers statiques de WordPress depuis le volume partagé et passe le PHP à WordPress en FastCGI.', en: 'The only entry point: it terminates TLS with a self-signed certificate made by openssl when the image is built, serves WordPress’s static files from the shared volume, and passes PHP to WordPress over FastCGI.' }, tags: ['debian:bookworm', 'EXPOSE 443', 'restart: always'] },
+    wordpress: { files: ['wordpress/Dockerfile', 'wordpress/tools/init.sh', 'wordpress/conf/www.conf'], text: { fr: 'PHP-FPM 8.2 écoute sur le port 9000, sans serveur web à l’intérieur. Au premier démarrage, wp-cli télécharge WordPress 6.4.3, écrit wp-config.php à partir des secrets, installe le site, un compte auteur et le plugin de cache Redis.', en: 'PHP-FPM 8.2 listening on port 9000, no web server inside. On first start, wp-cli downloads WordPress 6.4.3, writes wp-config.php from the secrets, installs the site, an author account and the Redis cache plugin.' }, tags: ['debian:bookworm', 'EXPOSE 9000', 'depends_on: mariadb'] },
+    mariadb: { files: ['mariadb/Dockerfile', 'mariadb/tools/init.sh', 'mariadb/conf/mariadb.cnf'], text: { fr: 'La base de données. Si son dossier n’existe pas encore, init.sh lance un serveur temporaire, définit le mot de passe root et crée la base et l’utilisateur WordPress à partir des secrets, puis lance mysqld_safe pour de bon.', en: 'The database. If the database folder does not exist yet, init.sh starts a temporary server, sets the root password and creates the WordPress database and user from the secrets, then runs mysqld_safe for good.' }, tags: ['debian:bookworm', 'EXPOSE 3306', 'volume: db_data'] },
+    redis: { files: ['bonus/redis/Dockerfile', 'bonus/redis/tools/init.sh'], text: { en: 'Object cache for WordPress (WP_REDIS_HOST in wp-config.php), protected by a password read from a secret.', fr: 'Cache d’objets pour WordPress (WP_REDIS_HOST dans wp-config.php), protégé par un mot de passe lu dans un secret.' }, tags: ['bonus', 'redis-server', 'volume: redis_data'] },
+    adminer: { files: ['bonus/adminer/Dockerfile'], text: { en: 'Adminer 4.17.1, a one-file PHP database admin, run with PHP’s built-in server on port 8080 and reached through nginx at /adminer.', fr: 'Adminer 4.17.1, un outil d’administration de base de données en un seul fichier PHP, lancé avec le serveur intégré de PHP sur le port 8080 et accessible via nginx sur /adminer.' }, tags: ['bonus', 'EXPOSE 8080', 'depends_on: mariadb'] },
+    cadvisor: { files: ['bonus/cadvisor/Dockerfile'], text: { en: 'Google’s cAdvisor, reading the host’s /sys, /var/lib/docker and the Docker socket (read-only, privileged) to chart every container’s CPU, memory and network.', fr: 'Le cAdvisor de Google, qui lit /sys, /var/lib/docker et le socket Docker de l’hôte (en lecture seule, privilégié) pour tracer le CPU, la mémoire et le réseau de chaque conteneur.' }, tags: ['bonus', 'EXPOSE 8084', 'privileged'] },
+    ftp: { files: ['bonus/ftp/Dockerfile', 'bonus/ftp/tools/init.sh', 'bonus/ftp/conf/vsftpd.conf'], text: { en: 'vsftpd with one local user from the secrets, jailed in the WordPress volume, so files uploaded by FTP appear on the site. Passive mode uses ports 40000 to 40005.', fr: 'vsftpd avec un utilisateur local tiré des secrets, enfermé dans le volume WordPress : les fichiers envoyés en FTP apparaissent sur le site. Le mode passif utilise les ports 40000 à 40005.' }, tags: ['bonus', 'ports 21, 40000-40005', 'volume: wp_data'] },
+    'static-site': { files: ['bonus/static-site/Dockerfile', 'bonus/static-site/www/index.html', 'bonus/static-site/www/Global.css'], text: { en: 'A static page in the Matrix style, served by Python’s http.server and reached through nginx at /home.', fr: 'Une page statique façon Matrix, servie par le http.server de Python et accessible via nginx sur /home.' }, tags: ['bonus', 'EXPOSE 8042', 'python3'] },
+    wp_data: { files: ['docker-compose.yml'], key: 'volumes:', text: { en: 'WordPress files, bind-mounted from the host. Shared by nginx (to serve static files), wordpress (PHP) and ftp.', fr: 'Les fichiers WordPress, montés depuis l’hôte. Partagés par nginx (pour servir les fichiers statiques), wordpress (PHP) et ftp.' }, tags: ['bind mount', 'nginx · wordpress · ftp'] },
+    db_data: { files: ['docker-compose.yml'], key: 'volumes:', text: { en: 'MariaDB’s data directory, so the database survives docker compose down.', fr: 'Le dossier de données de MariaDB, pour que la base survive à docker compose down.' }, tags: ['bind mount', 'mariadb'] },
+    redis_data: { files: ['docker-compose.yml'], key: 'volumes:', text: { en: 'Redis persistence directory.', fr: 'Le dossier de persistance de Redis.' }, tags: ['bind mount', 'redis'] },
+    secrets: { files: ['docker-compose.yml'], key: 'secrets:', text: { fr: 'Les mots de passe et les noms vivent dans des fichiers sous srcs/secrets/ (absents du dépôt) et sont montés en lecture seule dans /run/secrets/ des conteneurs qui les déclarent. Aucun mot de passe n’est écrit dans un Dockerfile ni dans l’environnement.', en: 'Passwords and names live in files under srcs/secrets/ (not in the repository) and are mounted read-only in /run/secrets/ of the containers that list them. No password is written in a Dockerfile or in the environment.' }, tags: ['8 secrets', 'files, not env vars'] },
+    browser: { files: ['nginx/conf/nginx.conf'], text: { en: 'samaouch.42.fr points to the VM. Only port 443 is published for the web, so every page goes through nginx.', fr: 'samaouch.42.fr pointe vers la VM. Seul le port 443 est publié pour le web : chaque page passe donc par nginx.' }, tags: ['HTTPS only'] },
+    ftpclient: { files: ['bonus/ftp/conf/vsftpd.conf'], text: { en: 'Port 21 and the passive range are published straight to the ftp container.', fr: 'Le port 21 et la plage passive sont publiés directement vers le conteneur ftp.' }, tags: ['FTP'] },
   };
 
   // ------------------------------------------------------------ drawing
   const svg = $('svg');
   const el = (tag, attrs, parent) => { const e = document.createElementNS(NS, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); if (parent) parent.appendChild(e); return e; };
   const pathD = (pts) => pts.map((p, i) => (i ? 'L' : 'M') + p[0] + ' ' + p[1]).join(' ');
+  const boxLabels = [];
+  function labelBoxes() { for (const [e, en, fr] of boxLabels) e.textContent = T(en, fr); }
   function draw() {
     el('rect', { x: 180, y: 20, width: 910, height: 600, rx: 10, class: 'box' }, svg);
-    el('text', { x: 196, y: 42, class: 'box-label' }, svg).textContent = 'host VM · Docker engine';
+    boxLabels.push([el('text', { x: 196, y: 42, class: 'box-label' }, svg), 'host VM · Docker engine', 'VM hôte · moteur Docker']);
     el('rect', { x: 240, y: 62, width: 834, height: 380, rx: 8, class: 'box', 'stroke-dasharray': '6 5' }, svg);
-    el('text', { x: 256, y: 80, class: 'box-label' }, svg).textContent = 'network inception · bridge';
-    el('text', { x: 256, y: 532, class: 'box-label' }, svg).textContent = 'volumes · secrets';
+    boxLabels.push([el('text', { x: 256, y: 80, class: 'box-label' }, svg), 'network inception · bridge', 'réseau inception · bridge']);
+    boxLabels.push([el('text', { x: 256, y: 532, class: 'box-label' }, svg), 'volumes · secrets', 'volumes · secrets']);
+    labelBoxes();
     const eg = el('g', {}, svg);
     for (const e of edges) {
       if (e.hide) continue;
@@ -378,13 +384,13 @@
   function match(uri) {
     const L = nginx.locs;
     const exact = L.find((l) => l.mod === '=' && l.arg === uri);
-    if (exact) return { loc: exact, why: 'exact match' };
+    if (exact) return { loc: exact, why: T('exact match', 'correspondance exacte') };
     let best = null;
     for (const l of L) if (!l.re && l.mod !== '=' && uri.startsWith(l.arg) && (!best || l.arg.length > best.arg.length)) best = l;
-    if (best && best.mod === '^~') return { loc: best, why: 'longest prefix (^~ stops the regex search)' };
+    if (best && best.mod === '^~') return { loc: best, why: T('longest prefix (^~ stops the regex search)', 'plus long préfixe (^~ arrête la recherche de regex)') };
     const rx = L.find((l) => l.re && l.re.test(uri));
-    if (rx) return { loc: rx, why: best ? `regex wins over the prefix “${best.arg}”` : 'first matching regex', prefix: best };
-    return best ? { loc: best, why: 'longest matching prefix' } : null;
+    if (rx) return { loc: rx, why: best ? T(`regex wins over the prefix “${best.arg}”`, `la regex l’emporte sur le préfixe « ${best.arg} »`) : T('first matching regex', 'première regex qui correspond'), prefix: best };
+    return best ? { loc: best, why: T('longest matching prefix', 'plus long préfixe qui correspond') } : null;
   }
 
   // ------------------------------------------------------------ request tracer
@@ -395,77 +401,77 @@
     steps = [];
     const n = nginx;
     if (proto === 'ftp') {
-      step('An FTP client connects to <code>samaouch.42.fr:21</code>. Compose publishes <code>21:21</code> straight to the ftp container, no nginx in between.', { nodes: ['ftpclient', 'ftp'], edges: ['in21'], file: 'srcs/docker-compose.yml', find: /- "21:21"/ });
-      step('vsftpd checks the local user created by <code>init.sh</code> from the <code>ftpuser</code> and <code>ftp-password</code> secrets.', { nodes: ['ftp', 'secrets'], file: REQ + 'bonus/ftp/tools/init.sh', find: /chpasswd/ });
-      step('Data goes over passive ports 40000 to 40005, published too.', { nodes: ['ftp'], edges: ['in21'], file: REQ + 'bonus/ftp/conf/vsftpd.conf', find: /pasv_m(in|ax)_port/ });
-      step('The user is jailed in <code>/var/www/html</code>, the <code>wp_data</code> volume: a file uploaded here is instantly on the WordPress site.', { nodes: ['ftp', 'wp_data'], edges: ['v-ftp2'], file: REQ + 'bonus/ftp/conf/vsftpd.conf', find: /local_root/ });
-      return { verdict: 'FTP → ftp container → wp_data', ok: true };
+      step(T('An FTP client connects to <code>samaouch.42.fr:21</code>. Compose publishes <code>21:21</code> straight to the ftp container, no nginx in between.', 'Un client FTP se connecte à <code>samaouch.42.fr:21</code>. Compose publie <code>21:21</code> directement vers le conteneur ftp, sans nginx entre les deux.'), { nodes: ['ftpclient', 'ftp'], edges: ['in21'], file: 'srcs/docker-compose.yml', find: /- "21:21"/ });
+      step(T('vsftpd checks the local user created by <code>init.sh</code> from the <code>ftpuser</code> and <code>ftp-password</code> secrets.', 'vsftpd vérifie l’utilisateur local créé par <code>init.sh</code> à partir des secrets <code>ftpuser</code> et <code>ftp-password</code>.'), { nodes: ['ftp', 'secrets'], file: REQ + 'bonus/ftp/tools/init.sh', find: /chpasswd/ });
+      step(T('Data goes over passive ports 40000 to 40005, published too.', 'Les données passent par les ports passifs 40000 à 40005, publiés eux aussi.'), { nodes: ['ftp'], edges: ['in21'], file: REQ + 'bonus/ftp/conf/vsftpd.conf', find: /pasv_m(in|ax)_port/ });
+      step(T('The user is jailed in <code>/var/www/html</code>, the <code>wp_data</code> volume: a file uploaded here is instantly on the WordPress site.', 'L’utilisateur est enfermé dans <code>/var/www/html</code>, le volume <code>wp_data</code> : un fichier envoyé ici est aussitôt sur le site WordPress.'), { nodes: ['ftp', 'wp_data'], edges: ['v-ftp2'], file: REQ + 'bonus/ftp/conf/vsftpd.conf', find: /local_root/ });
+      return { verdict: T('FTP → ftp container → wp_data', 'FTP → conteneur ftp → wp_data'), ok: true };
     }
     if (proto === 'http') {
-      step('A plain HTTP request to port 80. Compose only publishes 443 for the web (<code>"443:443"</code>), so nothing listens on 80.', { nodes: ['browser'], edges: [], file: 'srcs/docker-compose.yml', find: /- "443:443"/ });
-      step('The connection is refused before it reaches any container: the subject wants HTTPS only.', { nodes: ['browser'], fail: true });
-      return { verdict: 'Connection refused: only port 443 is published', ok: false };
+      step(T('A plain HTTP request to port 80. Compose only publishes 443 for the web (<code>"443:443"</code>), so nothing listens on 80.', 'Une requête HTTP simple sur le port 80. Compose ne publie que le 443 pour le web (<code>"443:443"</code>) : rien n’écoute sur le 80.'), { nodes: ['browser'], edges: [], file: 'srcs/docker-compose.yml', find: /- "443:443"/ });
+      step(T('The connection is refused before it reaches any container: the subject wants HTTPS only.', 'La connexion est refusée avant d’atteindre un conteneur : le sujet impose HTTPS uniquement.'), { nodes: ['browser'], fail: true });
+      return { verdict: T('Connection refused: only port 443 is published', 'Connexion refusée : seul le port 443 est publié'), ok: false };
     }
     let uri = input.trim() || '/';
     if (!uri.startsWith('/')) uri = '/' + uri;
     const q = uri.indexOf('?');
     const path = decodeURIComponent(q >= 0 ? uri.slice(0, q) : uri);
-    step('The browser opens a TLS connection to <code>samaouch.42.fr:443</code>; Docker forwards the published port to nginx.', { nodes: ['browser', 'nginx'], edges: ['in443'], file: 'srcs/docker-compose.yml', find: /- "443:443"/ });
-    step('nginx answers with the self-signed certificate made at build time and accepts only TLS 1.2 and 1.3.', { nodes: ['nginx'], file: NG, lines: [n.listen, n.listen + 1, n.cert, n.cert + 1, n.ssl] });
+    step(T('The browser opens a TLS connection to <code>samaouch.42.fr:443</code>; Docker forwards the published port to nginx.', 'Le navigateur ouvre une connexion TLS vers <code>samaouch.42.fr:443</code> ; Docker transmet le port publié à nginx.'), { nodes: ['browser', 'nginx'], edges: ['in443'], file: 'srcs/docker-compose.yml', find: /- "443:443"/ });
+    step(T('nginx answers with the self-signed certificate made at build time and accepts only TLS 1.2 and 1.3.', 'nginx répond avec le certificat auto-signé créé à la construction et n’accepte que TLS 1.2 et 1.3.'), { nodes: ['nginx'], file: NG, lines: [n.listen, n.listen + 1, n.cert, n.cert + 1, n.ssl] });
     let m = match(path);
-    if (!m) { step('No location matches: 404.', { nodes: ['nginx'], fail: true }); return { verdict: '404 from nginx', ok: false }; }
+    if (!m) { step(T('No location matches: 404.', 'Aucune location ne correspond : 404.'), { nodes: ['nginx'], fail: true }); return { verdict: T('404 from nginx', '404 de nginx'), ok: false }; }
     step(`<code>${esc(path)}</code> → <code>location ${m.loc.mod ? m.loc.mod + ' ' : ''}${esc(m.loc.arg)}</code> (${m.why}).`, { nodes: ['nginx'], file: NG, lines: m.loc.lines });
     let loc = m.loc;
     if (loc.tryFiles && !loc.proxy && !loc.fastcgi) {
       const isDir = path.endsWith('/');
       const looksFile = /\.[a-z0-9]{1,5}$/i.test(path);
       if (isDir) {
-        step(`<code>try_files ${esc(loc.tryFiles)}</code>: <code>${esc(path)}</code> is a folder of <code>wp_data</code>, so nginx looks for its <code>index index.php</code>, and restarts the matching on <code>${esc(path)}index.php</code>.`, { nodes: ['nginx', 'wp_data'], edges: ['v-ng'], file: NG, lines: loc.lines });
+        step(T(`<code>try_files ${esc(loc.tryFiles)}</code>: <code>${esc(path)}</code> is a folder of <code>wp_data</code>, so nginx looks for its <code>index index.php</code>, and restarts the matching on <code>${esc(path)}index.php</code>.`, `<code>try_files ${esc(loc.tryFiles)}</code> : <code>${esc(path)}</code> est un dossier de <code>wp_data</code>, donc nginx cherche son <code>index index.php</code> et relance la recherche sur <code>${esc(path)}index.php</code>.`), { nodes: ['nginx', 'wp_data'], edges: ['v-ng'], file: NG, lines: loc.lines });
         const m2 = match(path + 'index.php');
-        if (!m2 || !m2.loc.fastcgi) return { verdict: '403 or 404 from nginx', ok: false };
+        if (!m2 || !m2.loc.fastcgi) return { verdict: T('403 or 404 from nginx', '403 ou 404 de nginx'), ok: false };
         step(`<code>${esc(path)}index.php</code> → <code>location ~ ${esc(m2.loc.arg)}</code> (${m2.why}).`, { nodes: ['nginx'], file: NG, lines: m2.loc.lines });
         loc = m2.loc;
       } else if (looksFile) {
-        step(`<code>try_files ${esc(loc.tryFiles)}</code>: nginx reads <code>/var/www/html${esc(path)}</code> straight from the <code>wp_data</code> volume it shares with WordPress, without asking PHP. If the file does not exist, it answers 404 itself.`, { nodes: ['nginx', 'wp_data'], edges: ['v-ng'], file: NG, lines: loc.lines });
-        step('The file is sent back over TLS.', { nodes: ['browser', 'nginx'], edges: ['in443'], back: true });
-        return { verdict: '200 from nginx (static file), or 404 if missing', ok: true };
+        step(T(`<code>try_files ${esc(loc.tryFiles)}</code>: nginx reads <code>/var/www/html${esc(path)}</code> straight from the <code>wp_data</code> volume it shares with WordPress, without asking PHP. If the file does not exist, it answers 404 itself.`, `<code>try_files ${esc(loc.tryFiles)}</code> : nginx lit <code>/var/www/html${esc(path)}</code> directement dans le volume <code>wp_data</code> qu’il partage avec WordPress, sans passer par PHP. Si le fichier n’existe pas, il répond 404 lui-même.`), { nodes: ['nginx', 'wp_data'], edges: ['v-ng'], file: NG, lines: loc.lines });
+        step(T('The file is sent back over TLS.', 'Le fichier est renvoyé en TLS.'), { nodes: ['browser', 'nginx'], edges: ['in443'], back: true });
+        return { verdict: T('200 from nginx (static file), or 404 if missing', '200 de nginx (fichier statique), ou 404 s’il manque'), ok: true };
       } else {
-        step(`<code>try_files ${esc(loc.tryFiles)}</code>: no file and no folder <code>${esc(path)}</code> in <code>wp_data</code>, so nginx answers 404 itself, without asking WordPress. Pretty permalinks would need <code>/index.php?$args</code> as a last resort.`, { nodes: ['nginx', 'wp_data'], edges: ['v-ng'], file: NG, lines: loc.lines, fail: true });
-        return { verdict: '404 from nginx', ok: false };
+        step(T(`<code>try_files ${esc(loc.tryFiles)}</code>: no file and no folder <code>${esc(path)}</code> in <code>wp_data</code>, so nginx answers 404 itself, without asking WordPress. Pretty permalinks would need <code>/index.php?$args</code> as a last resort.`, `<code>try_files ${esc(loc.tryFiles)}</code> : ni fichier ni dossier <code>${esc(path)}</code> dans <code>wp_data</code>, donc nginx répond 404 lui-même, sans demander à WordPress. Les permaliens lisibles demanderaient <code>/index.php?$args</code> en dernier recours.`), { nodes: ['nginx', 'wp_data'], edges: ['v-ng'], file: NG, lines: loc.lines, fail: true });
+        return { verdict: T('404 from nginx', '404 de nginx'), ok: false };
       }
     }
     if (loc.fastcgi) {
       const target = m.loc === loc ? path : path + 'index.php';
       const wpFile = /^\/(index|wp-[a-z-]+|xmlrpc)\.php$|^\/wp-admin\/([\w-]+\/)?[\w-]+\.php$|^\/wp-includes\//.test(target);
       if (!wpFile) {
-        step(`FastCGI to <code>${esc(loc.fastcgi)}</code> with <code>SCRIPT_FILENAME /var/www/html${esc(target)}</code>.`, { nodes: ['nginx', 'wordpress'], edges: ['ng-wp'], file: NG, lines: loc.lines });
-        step(`WordPress has no <code>${esc(target)}</code> in <code>wp_data</code>, so PHP-FPM answers “File not found.” with a 404, which nginx passes back.`, { nodes: ['wordpress', 'wp_data'], edges: ['v-wp'], fail: true, file: REQ + 'wordpress/conf/www.conf', find: /^listen/ });
-        return { verdict: '404 “File not found.” from PHP-FPM', ok: false };
+        step(T(`FastCGI to <code>${esc(loc.fastcgi)}</code> with <code>SCRIPT_FILENAME /var/www/html${esc(target)}</code>.`, `FastCGI vers <code>${esc(loc.fastcgi)}</code> avec <code>SCRIPT_FILENAME /var/www/html${esc(target)}</code>.`), { nodes: ['nginx', 'wordpress'], edges: ['ng-wp'], file: NG, lines: loc.lines });
+        step(T(`WordPress has no <code>${esc(target)}</code> in <code>wp_data</code>, so PHP-FPM answers “File not found.” with a 404, which nginx passes back.`, `WordPress n’a pas de <code>${esc(target)}</code> dans <code>wp_data</code>, donc PHP-FPM répond « File not found. » avec un 404, que nginx renvoie.`), { nodes: ['wordpress', 'wp_data'], edges: ['v-wp'], fail: true, file: REQ + 'wordpress/conf/www.conf', find: /^listen/ });
+        return { verdict: T('404 “File not found.” from PHP-FPM', '404 « File not found. » de PHP-FPM'), ok: false };
       }
-      step(`FastCGI to <code>${esc(loc.fastcgi)}</code>: Docker’s DNS turns the service name into the container’s address on the <code>inception</code> network. <code>SCRIPT_FILENAME</code> tells PHP-FPM which file to run.`, { nodes: ['nginx', 'wordpress'], edges: ['ng-wp'], file: NG, lines: loc.lines });
-      step('PHP-FPM, listening on port 9000, takes the request with one of its 5 workers.', { nodes: ['wordpress'], file: REQ + 'wordpress/conf/www.conf', find: /^(listen|pm\.max_children)/ });
-      step('WordPress loads <code>wp-config.php</code>, written by <code>init.sh</code> from the secrets, and looks into Redis first for cached objects.', { nodes: ['wordpress', 'redis'], edges: ['wp-rd'], file: REQ + 'wordpress/tools/init.sh', find: /WP_REDIS_(HOST|PORT)|WP_CACHE/ });
-      step('Whatever is not cached is read from MariaDB, reached by its service name.', { nodes: ['wordpress', 'mariadb', 'db_data'], edges: ['wp-db', 'v-db'], file: REQ + 'wordpress/tools/init.sh', find: /DB_HOST|DB_NAME|DB_USER'/ });
-      step('The HTML goes back through FastCGI to nginx, then to the browser over TLS.', { nodes: ['browser', 'nginx', 'wordpress'], edges: ['ng-wp', 'in443'], back: true });
-      return { verdict: '200 rendered by WordPress (PHP-FPM)', ok: true };
+      step(T(`FastCGI to <code>${esc(loc.fastcgi)}</code>: Docker’s DNS turns the service name into the container’s address on the <code>inception</code> network. <code>SCRIPT_FILENAME</code> tells PHP-FPM which file to run.`, `FastCGI vers <code>${esc(loc.fastcgi)}</code> : le DNS de Docker transforme le nom du service en adresse du conteneur sur le réseau <code>inception</code>. <code>SCRIPT_FILENAME</code> indique à PHP-FPM quel fichier exécuter.`), { nodes: ['nginx', 'wordpress'], edges: ['ng-wp'], file: NG, lines: loc.lines });
+      step(T('PHP-FPM, listening on port 9000, takes the request with one of its 5 workers.', 'PHP-FPM, qui écoute sur le port 9000, prend la requête avec l’un de ses 5 workers.'), { nodes: ['wordpress'], file: REQ + 'wordpress/conf/www.conf', find: /^(listen|pm\.max_children)/ });
+      step(T('WordPress loads <code>wp-config.php</code>, written by <code>init.sh</code> from the secrets, and looks into Redis first for cached objects.', 'WordPress charge <code>wp-config.php</code>, écrit par <code>init.sh</code> à partir des secrets, et cherche d’abord les objets en cache dans Redis.'), { nodes: ['wordpress', 'redis'], edges: ['wp-rd'], file: REQ + 'wordpress/tools/init.sh', find: /WP_REDIS_(HOST|PORT)|WP_CACHE/ });
+      step(T('Whatever is not cached is read from MariaDB, reached by its service name.', 'Ce qui n’est pas en cache est lu dans MariaDB, joint par son nom de service.'), { nodes: ['wordpress', 'mariadb', 'db_data'], edges: ['wp-db', 'v-db'], file: REQ + 'wordpress/tools/init.sh', find: /DB_HOST|DB_NAME|DB_USER'/ });
+      step(T('The HTML goes back through FastCGI to nginx, then to the browser over TLS.', 'Le HTML revient par FastCGI jusqu’à nginx, puis au navigateur en TLS.'), { nodes: ['browser', 'nginx', 'wordpress'], edges: ['ng-wp', 'in443'], back: true });
+      return { verdict: T('200 rendered by WordPress (PHP-FPM)', '200 rendu par WordPress (PHP-FPM)'), ok: true };
     }
     if (loc.proxy) {
       const host = /\/\/([^:/]+)/.exec(loc.proxy)[1];
       const edge = { 'static-site': 'ng-st', adminer: 'ng-ad', cadvisor: 'ng-ca' }[host];
       const slash = /\/\/[^/]+\/.*$/.test(loc.proxy);
       const upstream = slash ? loc.proxy.replace(/^https?:\/\/[^/]+/, '') + path.slice(loc.arg.length) : path;
-      step(`<code>proxy_pass ${esc(loc.proxy)}</code>: a new HTTP request to the <code>${host}</code> container. ${slash ? `Because the target ends with a path, nginx replaces <code>${esc(loc.arg)}</code> with it: the container receives <code>${esc(upstream || '/')}</code>.` : 'The URI is passed unchanged.'}`, { nodes: ['nginx', host], edges: [edge], file: NG, lines: loc.lines });
+      step(T(`<code>proxy_pass ${esc(loc.proxy)}</code>: a new HTTP request to the <code>${host}</code> container. ${slash ? `Because the target ends with a path, nginx replaces <code>${esc(loc.arg)}</code> with it: the container receives <code>${esc(upstream || '/')}</code>.` : 'The URI is passed unchanged.'}`, `<code>proxy_pass ${esc(loc.proxy)}</code> : une nouvelle requête HTTP vers le conteneur <code>${host}</code>. ${slash ? `Comme la cible se termine par un chemin, nginx remplace <code>${esc(loc.arg)}</code> par celui-ci : le conteneur reçoit <code>${esc(upstream || '/')}</code>.` : 'L’URI est transmise telle quelle.'}`), { nodes: ['nginx', host], edges: [edge], file: NG, lines: loc.lines });
       if (host === 'static-site') {
-        step('Python’s <code>http.server</code> serves the files copied into the image (and tidies the double slash).', { nodes: ['static-site'], file: REQ + 'bonus/static-site/Dockerfile', find: /CMD|COPY/ });
+        step(T('Python’s <code>http.server</code> serves the files copied into the image (and tidies the double slash).', 'Le <code>http.server</code> de Python sert les fichiers copiés dans l’image (et nettoie le double slash).'), { nodes: ['static-site'], file: REQ + 'bonus/static-site/Dockerfile', find: /CMD|COPY/ });
         $('open-static').hidden = false;
       } else if (host === 'adminer') {
-        step('PHP’s built-in server runs <code>index.php</code>, the Adminer file downloaded at build time.', { nodes: ['adminer'], file: REQ + 'bonus/adminer/Dockerfile', find: /CMD|wget/ });
-        step('Adminer logs in to MariaDB on port 3306 with the user you type.', { nodes: ['adminer', 'mariadb'], edges: ['ad-db'], file: REQ + 'mariadb/conf/mariadb.cnf', find: /bind-address|port/ });
+        step(T('PHP’s built-in server runs <code>index.php</code>, the Adminer file downloaded at build time.', 'Le serveur intégré de PHP exécute <code>index.php</code>, le fichier Adminer téléchargé à la construction.'), { nodes: ['adminer'], file: REQ + 'bonus/adminer/Dockerfile', find: /CMD|wget/ });
+        step(T('Adminer logs in to MariaDB on port 3306 with the user you type.', 'Adminer se connecte à MariaDB sur le port 3306 avec l’utilisateur que vous saisissez.'), { nodes: ['adminer', 'mariadb'], edges: ['ad-db'], file: REQ + 'mariadb/conf/mariadb.cnf', find: /bind-address|port/ });
       } else if (host === 'cadvisor') {
-        step('cAdvisor runs with <code>--url_base_prefix=/cadvisor</code>, so its pages and links work behind nginx. It reads the host through read-only mounts.', { nodes: ['cadvisor'], file: REQ + 'bonus/cadvisor/Dockerfile', find: /CMD/ });
+        step(T('cAdvisor runs with <code>--url_base_prefix=/cadvisor</code>, so its pages and links work behind nginx. It reads the host through read-only mounts.', 'cAdvisor tourne avec <code>--url_base_prefix=/cadvisor</code>, pour que ses pages et ses liens marchent derrière nginx. Il lit l’hôte par des montages en lecture seule.'), { nodes: ['cadvisor'], file: REQ + 'bonus/cadvisor/Dockerfile', find: /CMD/ });
       }
-      step('The answer comes back through nginx, over TLS.', { nodes: ['browser', 'nginx', host], edges: [edge, 'in443'], back: true });
-      return { verdict: `200 from ${host}, through nginx`, ok: true };
+      step(T('The answer comes back through nginx, over TLS.', 'La réponse revient par nginx, en TLS.'), { nodes: ['browser', 'nginx', host], edges: [edge, 'in443'], back: true });
+      return { verdict: T(`200 from ${host}, through nginx`, `200 de ${host}, via nginx`), ok: true };
     }
     return { verdict: '?', ok: false };
   }
@@ -475,7 +481,7 @@
     box.innerHTML = '';
     list.forEach((s, i) => {
       const li = document.createElement('li');
-      li.innerHTML = '<span>' + s.text + '</span>';
+      li.innerHTML = '<span>' + L(s.text) + '</span>';
       li.addEventListener('click', () => go(i, box, list));
       box.appendChild(li);
     });
@@ -541,18 +547,18 @@
   // ------------------------------------------------------------ make replay
   const MK = 'Makefile', MDB = REQ + 'mariadb/tools/init.sh', WP = REQ + 'wordpress/tools/init.sh';
   const makeSteps = [
-    { text: '<code>make</code> runs <code>setup</code> first: it creates the three host folders the volumes bind to.', nodes: ['wp_data', 'db_data', 'redis_data'], file: MK, find: /mkdir -p|DATA_PATH =/ },
-    { text: '<code>docker compose up -d --build</code> builds eight images, all from <code>debian:bookworm</code>.', nodes: nodes.filter((x) => x.kind === 'container').map((x) => x.id), file: MK, find: /docker compose -f \$\(COMPOSE_FILE\) up/ },
-    { text: 'While building nginx, openssl makes a self-signed certificate for <code>samaouch.42.fr</code>.', nodes: ['nginx'], file: REQ + 'nginx/Dockerfile', find: /openssl|-out|-keyout|-subj/ },
-    { text: 'mariadb starts first (it depends on nothing). Its folder is empty, so <code>init.sh</code> installs a fresh database and starts a temporary server.', nodes: ['mariadb', 'db_data'], edges: ['v-db'], file: MDB, find: /if \[ ! -d|mysql_install_db|mysqld_safe --datadir=\/var\/lib\/mysql &/ },
-    { text: 'It reads the secrets, sets the root password, creates the database and the WordPress user, then restarts MariaDB as the main process.', nodes: ['mariadb', 'secrets'], file: MDB, find: /\/run\/secrets|ALTER USER|CREATE DATABASE|CREATE USER|GRANT|exec mysqld_safe/ },
-    { text: 'redis starts with a password from the <code>user_password</code> secret.', nodes: ['redis', 'secrets', 'redis_data'], edges: ['v-rd'], file: REQ + 'bonus/redis/tools/init.sh', find: /redis-server|secrets/ },
-    { text: 'wordpress starts after mariadb (<code>depends_on</code>), installs wp-cli and downloads WordPress 6.4.3 into the shared volume.', nodes: ['wordpress', 'wp_data'], edges: ['v-wp', 'v-ng'], file: WP, find: /wp-cli\.phar$|wp core download/ },
-    { text: '<code>depends_on</code> does not wait for MariaDB to be ready, so the script polls port 3306 with netcat, then <code>wp db check</code>.', nodes: ['wordpress', 'mariadb'], edges: ['wp-db'], file: WP, find: /until nc -z|until wp db check|Waiting for MariaDB/ },
-    { text: 'It writes <code>wp-config.php</code> from the secrets, with <code>DB_HOST mariadb</code> and <code>WP_REDIS_HOST redis</code>: service names, resolved by Docker’s DNS.', nodes: ['wordpress', 'secrets', 'redis'], edges: ['wp-rd'], file: WP, find: /define\('DB_|WP_REDIS_HOST/ },
-    { text: 'First start only: <code>wp core install</code>, an author account, the redis-cache plugin. Then PHP-FPM runs in the foreground as PID 1.', nodes: ['wordpress', 'redis'], file: WP, find: /wp core install|wp user create|wp plugin install|wp redis enable|exec \/usr\/sbin\/php-fpm/ },
-    { text: 'nginx starts after wordpress and listens on 443, <code>daemon off</code> so the container lives as long as nginx.', nodes: ['nginx', 'wordpress', 'browser'], edges: ['in443', 'ng-wp'], file: REQ + 'nginx/Dockerfile', find: /CMD|EXPOSE/ },
-    { text: 'The bonus services come up beside them. Every service has <code>restart: always</code>, so a crash brings it back. The site is ready at https://samaouch.42.fr.', nodes: ['adminer', 'cadvisor', 'ftp', 'static-site', 'nginx'], edges: ['ng-st', 'ng-ad', 'ng-ca', 'in21', 'in8084'], file: 'srcs/docker-compose.yml', find: /restart: always/ },
+    { text: { en: '<code>make</code> runs <code>setup</code> first: it creates the three host folders the volumes bind to.', fr: '<code>make</code> lance d’abord <code>setup</code> : il crée les trois dossiers de l’hôte auxquels les volumes sont liés.' }, nodes: ['wp_data', 'db_data', 'redis_data'], file: MK, find: /mkdir -p|DATA_PATH =/ },
+    { text: { en: '<code>docker compose up -d --build</code> builds eight images, all from <code>debian:bookworm</code>.', fr: '<code>docker compose up -d --build</code> construit huit images, toutes à partir de <code>debian:bookworm</code>.' }, nodes: nodes.filter((x) => x.kind === 'container').map((x) => x.id), file: MK, find: /docker compose -f \$\(COMPOSE_FILE\) up/ },
+    { text: { en: 'While building nginx, openssl makes a self-signed certificate for <code>samaouch.42.fr</code>.', fr: 'Pendant la construction de nginx, openssl crée un certificat auto-signé pour <code>samaouch.42.fr</code>.' }, nodes: ['nginx'], file: REQ + 'nginx/Dockerfile', find: /openssl|-out|-keyout|-subj/ },
+    { text: { en: 'mariadb starts first (it depends on nothing). Its folder is empty, so <code>init.sh</code> installs a fresh database and starts a temporary server.', fr: 'mariadb démarre en premier (il ne dépend de rien). Son dossier est vide, donc <code>init.sh</code> installe une base neuve et lance un serveur temporaire.' }, nodes: ['mariadb', 'db_data'], edges: ['v-db'], file: MDB, find: /if \[ ! -d|mysql_install_db|mysqld_safe --datadir=\/var\/lib\/mysql &/ },
+    { text: { en: 'It reads the secrets, sets the root password, creates the database and the WordPress user, then restarts MariaDB as the main process.', fr: 'Il lit les secrets, définit le mot de passe root, crée la base et l’utilisateur WordPress, puis relance MariaDB comme processus principal.' }, nodes: ['mariadb', 'secrets'], file: MDB, find: /\/run\/secrets|ALTER USER|CREATE DATABASE|CREATE USER|GRANT|exec mysqld_safe/ },
+    { text: { en: 'redis starts with a password from the <code>user_password</code> secret.', fr: 'redis démarre avec un mot de passe tiré du secret <code>user_password</code>.' }, nodes: ['redis', 'secrets', 'redis_data'], edges: ['v-rd'], file: REQ + 'bonus/redis/tools/init.sh', find: /redis-server|secrets/ },
+    { text: { en: 'wordpress starts after mariadb (<code>depends_on</code>), installs wp-cli and downloads WordPress 6.4.3 into the shared volume.', fr: 'wordpress démarre après mariadb (<code>depends_on</code>), installe wp-cli et télécharge WordPress 6.4.3 dans le volume partagé.' }, nodes: ['wordpress', 'wp_data'], edges: ['v-wp', 'v-ng'], file: WP, find: /wp-cli\.phar$|wp core download/ },
+    { text: { en: '<code>depends_on</code> does not wait for MariaDB to be ready, so the script polls port 3306 with netcat, then <code>wp db check</code>.', fr: '<code>depends_on</code> n’attend pas que MariaDB soit prêt : le script interroge le port 3306 avec netcat, puis lance <code>wp db check</code>.' }, nodes: ['wordpress', 'mariadb'], edges: ['wp-db'], file: WP, find: /until nc -z|until wp db check|Waiting for MariaDB/ },
+    { text: { en: 'It writes <code>wp-config.php</code> from the secrets, with <code>DB_HOST mariadb</code> and <code>WP_REDIS_HOST redis</code>: service names, resolved by Docker’s DNS.', fr: 'Il écrit <code>wp-config.php</code> à partir des secrets, avec <code>DB_HOST mariadb</code> et <code>WP_REDIS_HOST redis</code> : des noms de services, résolus par le DNS de Docker.' }, nodes: ['wordpress', 'secrets', 'redis'], edges: ['wp-rd'], file: WP, find: /define\('DB_|WP_REDIS_HOST/ },
+    { text: { en: 'First start only: <code>wp core install</code>, an author account, the redis-cache plugin. Then PHP-FPM runs in the foreground as PID 1.', fr: 'Au premier démarrage seulement : <code>wp core install</code>, un compte auteur, le plugin redis-cache. Puis PHP-FPM tourne au premier plan en PID 1.' }, nodes: ['wordpress', 'redis'], file: WP, find: /wp core install|wp user create|wp plugin install|wp redis enable|exec \/usr\/sbin\/php-fpm/ },
+    { text: { en: 'nginx starts after wordpress and listens on 443, <code>daemon off</code> so the container lives as long as nginx.', fr: 'nginx démarre après wordpress et écoute sur le 443, en <code>daemon off</code> pour que le conteneur vive aussi longtemps que nginx.' }, nodes: ['nginx', 'wordpress', 'browser'], edges: ['in443', 'ng-wp'], file: REQ + 'nginx/Dockerfile', find: /CMD|EXPOSE/ },
+    { text: { en: 'The bonus services come up beside them. Every service has <code>restart: always</code>, so a crash brings it back. The site is ready at https://samaouch.42.fr.', fr: 'Les services bonus démarrent à côté. Chaque service a <code>restart: always</code>, donc un crash le relance. Le site est prêt sur https://samaouch.42.fr.' }, nodes: ['adminer', 'cadvisor', 'ftp', 'static-site', 'nginx'], edges: ['ng-st', 'ng-ad', 'ng-ca', 'in21', 'in8084'], file: 'srcs/docker-compose.yml', find: /restart: always/ },
   ];
   renderSteps(makeSteps, $('make-steps'));
   $('make-play').addEventListener('click', () => play(makeSteps, $('make-steps'), 2600));
@@ -566,7 +572,7 @@
     nodes.forEach((n) => n.g.classList.toggle('sel', n.id === id));
     highlight([id], [], false);
     $('i-title').textContent = N[id].title;
-    $('i-text').textContent = d.text;
+    $('i-text').textContent = L(d.text);
     $('i-meta').innerHTML = d.tags.map((t) => `<span class="pill${t === 'bonus' ? ' bonus' : ''}">${esc(t)}</span>`).join('');
     const list = d.files.map((f) => (f === 'docker-compose.yml' ? 'srcs/docker-compose.yml' : REQ + f));
     if (N[id].kind === 'container' && !list.includes('srcs/docker-compose.yml')) list.push('srcs/docker-compose.yml');
@@ -596,6 +602,14 @@
   $('tab-make').addEventListener('click', () => { select('make'); highlight([], [], false); cur = -1; [...$('make-steps').children].forEach((li) => { li.className = ''; }); setFiles([MK, 'srcs/docker-compose.yml']); });
   $('tab-inspect').addEventListener('click', () => inspect('nginx'));
 
+  // ------------------------------------------------------------ boot
+  I18N.onChange(() => {
+    labelBoxes();
+    renderSteps(makeSteps, $('make-steps'));
+    if (mode === 'request' && nginx) trace(...lastTrace);
+    else if (mode === 'inspect') { const n = nodes.find((x) => x.g.classList.contains('sel')); inspect(n ? n.id : 'nginx'); }
+    else if (mode === 'make' && cur >= 0) go(cur, $('make-steps'), makeSteps);
+  });
   // ------------------------------------------------------------ boot
   draw();
   fetchText(NG).then((t) => {
