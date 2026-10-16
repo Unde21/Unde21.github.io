@@ -169,6 +169,11 @@
     if (e.data.status === 'error') { $('boot-text').textContent = 'The backend could not start in this browser. Try a recent Chrome, Edge, Firefox or Safari.'; $('status').textContent = 'Backend failed to start.'; }
   });
   app.src = APP;
+  // if nothing answers, say so instead of loading forever
+  setTimeout(() => {
+    if ($('boot').hidden) return;
+    $('boot-text').textContent = 'This is taking long. A slow connection may still be downloading the backend (about 40 MB the first time); otherwise reload the page.';
+  }, 45000);
 
   document.querySelectorAll('[data-copy]').forEach((b) => b.addEventListener('click', async () => {
     try { await navigator.clipboard.writeText($(b.dataset.copy).textContent); b.textContent = 'copied'; setTimeout(() => { b.textContent = 'copy'; }, 1200); } catch (e) { /* no clipboard */ }
