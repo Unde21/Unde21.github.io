@@ -98,7 +98,8 @@
     .project.feature .shot { aspect-ratio: 16 / 9; }
   }
   @media (max-width: 560px) {
-    .links .btn { flex: 1; }
+    .links .btn { flex: 1 1 0; justify-content: center; white-space: nowrap; }
+    .links .btn.primary { flex-basis: 100%; }
   }
 </style>
 </head>
@@ -114,6 +115,7 @@
       <p class="lead" data-fr="Étudiant à <b>42 Lyon</b>. J’écris du C et du C++ pour Linux, et du TypeScript full-stack. Chaque projet ci-dessous tourne <b>directement dans votre navigateur</b>, à partir de son code source d’origine.">Student at <b>42 Lyon</b>. I write C and C++ for Linux, and full-stack TypeScript. Every project below runs <b>right in your browser</b>, from its original source code.</p>
       <div class="links">
         <a class="btn primary" href="#projects"><span data-fr="Voir les projets">See the projects</span> <span class="arrow" aria-hidden="true">→</span></a>
+        <a class="btn" href="mailto:maouche.sammy@gmail.com" data-fr="Me contacter">Contact me</a>
         <a class="btn" href="https://github.com/Unde21" target="_blank" rel="noopener">GitHub · Unde21</a>
       </div>
     </div>
@@ -202,7 +204,7 @@
       <div class="body">
         <span class="badge" data-fr="Schéma interactif">Interactive diagram</span>
         <h3>Inception</h3>
-        <p data-fr="Une infrastructure Docker Compose : nginx en TLS comme seule porte d’entrée, WordPress sur PHP-FPM, MariaDB, et en bonus Redis, Adminer, cAdvisor, FTP et un site statique. Suivez une requête à travers les vraies règles nginx, rejouez ce que fait <code>make</code> et lisez chaque Dockerfile.">A Docker Compose infrastructure: nginx with TLS as the only door, WordPress on PHP-FPM, MariaDB, and as bonus services Redis, Adminer, cAdvisor, FTP and a static site. Follow a request through the real nginx rules, replay what <code>make</code> does, and read every Dockerfile.</p>
+        <p data-fr="Une infrastructure Docker Compose : nginx en TLS comme seule porte d’entrée, WordPress sur PHP-FPM, MariaDB, et en bonus Redis, Adminer, cAdvisor, FTP et un site statique. Suivez une requête à travers les vraies règles nginx, rejouez ce que fait <code>make</code> et lisez chaque Dockerfile. Projet solo.">A Docker Compose infrastructure: nginx with TLS as the only door, WordPress on PHP-FPM, MariaDB, and as bonus services Redis, Adminer, cAdvisor, FTP and a static site. Follow a request through the real nginx rules, replay what <code>make</code> does, and read every Dockerfile. Solo project.</p>
         <ul class="tags"><li>Docker</li><li>Compose</li><li>nginx</li><li>TLS</li><li>WordPress</li><li>MariaDB</li></ul>
         <div class="actions">
           <a class="btn primary" href="inception.html"><span data-fr="Explorer">Explore</span> <span class="arrow" aria-hidden="true">→</span></a>
@@ -219,7 +221,7 @@
       <div class="body">
         <span class="badge" data-fr="Simulation en direct">Live simulation</span>
         <h3>Philosophers</h3>
-        <p data-fr="Le dîner des philosophes, avec threads et mutex, puis processus et sémaphores pour le bonus : personne ne doit mourir de faim. Choisissez les paramètres ; le vrai programme tourne et la table s’anime à partir de ce qu’il affiche.">The dining philosophers, with threads and mutexes, then processes and semaphores for the bonus: nobody may starve. Pick the parameters; the real program runs and the table is animated from what it prints.</p>
+        <p data-fr="Le dîner des philosophes, avec threads et mutex, puis processus et sémaphores pour le bonus : personne ne doit mourir de faim. Choisissez les paramètres ; le vrai programme tourne et la table s’anime à partir de ce qu’il affiche. Projet solo.">The dining philosophers, with threads and mutexes, then processes and semaphores for the bonus: nobody may starve. Pick the parameters; the real program runs and the table is animated from what it prints. Solo project.</p>
         <ul class="tags"><li>C</li><li>pthreads</li><li>mutex</li><li>fork</li><li>semaphores</li></ul>
         <div class="actions">
           <a class="btn primary" href="philosophers.html"><span data-fr="Lancer">Run</span> <span class="arrow" aria-hidden="true">→</span></a>
@@ -236,7 +238,7 @@
       <div class="body">
         <span class="badge" data-fr="Jouable · 2D">Playable · 2D</span>
         <h3>so_long</h3>
-        <p data-fr="Mon premier jeu 2D : Goku ramasse les boules de cristal et rejoint son vaisseau pendant que Cell le poursuit en tirant des rayons. Sprites animés, combats et compteur de pas à l’écran.">My first 2D game: Goku collects the crystal balls and reaches his spaceship while Cell chases him and fires beams. Animated sprites, combat and an on-screen step counter.</p>
+        <p data-fr="Mon premier jeu 2D : Goku ramasse les boules de cristal et rejoint son vaisseau pendant que Cell le poursuit en tirant des rayons. Sprites animés, combats et compteur de pas à l’écran. Projet solo.">My first 2D game: Goku collects the crystal balls and reaches his spaceship while Cell chases him and fires beams. Animated sprites, combat and an on-screen step counter. Solo project.</p>
         <ul class="tags"><li>C</li><li>MiniLibX</li><li>sprites XPM</li><li>2D</li></ul>
         <div class="actions">
           <a class="btn primary" href="so_long.html"><span data-fr="Jouer">Play</span> <span class="arrow" aria-hidden="true">→</span></a>
@@ -251,6 +253,7 @@
   <div class="wrap">
     <span><b>Sammy Maouche</b> · samaouch · 42 Lyon</span>
     <nav class="contact" aria-label="Links" data-fr-aria-label="Liens">
+      <a href="mailto:maouche.sammy@gmail.com">maouche.sammy@gmail.com</a>
       <a href="https://github.com/Unde21" target="_blank" rel="noopener">GitHub</a>
       <a href="#top" data-fr="Haut de page ↑">Back to top ↑</a>
     </nav>
