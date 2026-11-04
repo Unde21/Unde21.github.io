@@ -115,7 +115,7 @@
       <p class="lead" data-fr="Étudiant à <b>42 Lyon</b>. J’écris du C et du C++ pour Linux, et du TypeScript full-stack. Chaque projet ci-dessous tourne <b>directement dans votre navigateur</b>, à partir de son code source d’origine.">Student at <b>42 Lyon</b>. I write C and C++ for Linux, and full-stack TypeScript. Every project below runs <b>right in your browser</b>, from its original source code.</p>
       <div class="links">
         <a class="btn primary" href="#projects"><span data-fr="Voir les projets">See the projects</span> <span class="arrow" aria-hidden="true">→</span></a>
-        <a class="btn" href="mailto:maouche.sammy@gmail.com" data-fr="Me contacter">Contact me</a>
+        <a class="btn" href="#contact" data-u="ymmas.ehcuoam" data-d="moc.liamg" data-fr="Me contacter">Contact me</a>
         <a class="btn" href="https://github.com/Unde21" target="_blank" rel="noopener">GitHub · Unde21</a>
       </div>
     </div>
@@ -253,11 +253,22 @@
   <div class="wrap">
     <span><b>Sammy Maouche</b> · samaouch · 42 Lyon</span>
     <nav class="contact" aria-label="Links" data-fr-aria-label="Liens">
-      <a href="mailto:maouche.sammy@gmail.com">maouche.sammy@gmail.com</a>
+      <a id="contact" href="#contact" data-u="ymmas.ehcuoam" data-d="moc.liamg" data-show>Email</a>
       <a href="https://github.com/Unde21" target="_blank" rel="noopener">GitHub</a>
       <a href="#top" data-fr="Haut de page ↑">Back to top ↑</a>
     </nav>
   </div>
 </footer>
+<script>
+  // The address is stored reversed and in two parts, so it never appears in
+  // the page source: most address-harvesting bots read the HTML without
+  // running scripts. Visitors get a normal mailto link.
+  document.querySelectorAll('[data-u][data-d]').forEach((a) => {
+    const r = (s) => s.split('').reverse().join('');
+    const addr = r(a.dataset.u) + '@' + r(a.dataset.d);
+    a.href = 'mailto:' + addr;
+    if (a.hasAttribute('data-show')) a.textContent = addr;
+  });
+</script>
 </body>
 </html>
